@@ -309,11 +309,12 @@ async function runProductResearch() {
         const sellSek = Math.round(costUsd * 5 * 9.5);
 
         // Generate AI content
+        const productName = product.title || product.name || product.subject || 'Trending Product';
         const rawContent = await generateProductContent({
-          nameEn: product.title || product.name || 'Product',
-          description: detail?.description || product.title || '',
+          nameEn: productName,
+          description: productName,
           sellPrice: costUsd,
-          categoryName: product.productType || 'General'
+          categoryName: product.productType || product.category || 'General'
         });
         const content = parseGeneratedContent(rawContent);
 
@@ -338,7 +339,7 @@ async function runProductResearch() {
           adHook: content.adHook,
           tags: content.tags,
           // Raw
-          rawTitle: product.title || product.name,
+          rawTitle: product.title || product.name || product.subject || 'Product',
           aliUrl: `https://www.aliexpress.com/item/${product.itemId||product.productId}.html`,
           addedAt: new Date().toISOString(),
           status: 'pending'
