@@ -26,6 +26,25 @@ let store = {
   }
 };
 
+
+// ── SMART PRICE SNAPPING ───────────────────────────────────
+const SNAP_POINTS = [
+  29, 39, 49, 59, 79, 99, 119, 149, 179, 199,
+  229, 249, 299, 349, 399, 449, 499, 549, 599,
+  699, 799, 899, 999, 1099, 1199, 1299, 1499, 1999, 2499, 2999
+];
+
+function snapPrice(rawSek) {
+  if (rawSek <= 0) return 49;
+  let closest = SNAP_POINTS[0];
+  let minDiff = Math.abs(rawSek - SNAP_POINTS[0]);
+  for (const p of SNAP_POINTS) {
+    const diff = Math.abs(rawSek - p);
+    if (diff < minDiff) { minDiff = diff; closest = p; }
+  }
+  return closest;
+}
+
 // ── ALIEXPRESS DATAHUB API (via RapidAPI) ─────────────────
 async function searchAliExpressProducts(keyword, limit = 20) {
   const rapidApiKey = process.env.RAPIDAPI_KEY;
@@ -278,7 +297,7 @@ async function runProductResearch() {
 
     // Sort by score, take top 5
     candidates.sort((a, b) => b.score - a.score);
-    const top = candidates.slice(0, 5);
+    const top = candidates.slice(0, 10);
 
     console.log(`Found ${candidates.length} candidates, processing top ${top.length}`);
 
@@ -306,7 +325,8 @@ async function runProductResearch() {
         } catch(e) {}
 
         const costUsd = Math.max(2, parseFloat(product.sku?.def?.promotionPrice || product.sku?.def?.price || product.price?.minPrice || product.salePrice || 5));
-        const sellSek = Math.round(costUsd * 5 * 9.5);
+        const rawSek = Math.round(costUsd * 5 * 9.5); // 5x markup, USD to SEK
+        const sellSek = snapPrice(rawSek);
 
         // Generate AI content
         const productName = product.title || product.name || product.subject || 'Trending Product';
