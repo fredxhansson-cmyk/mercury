@@ -106,41 +106,41 @@ async function publishToShopify(product) {
 
 // ── OPENAI CONTENT GENERATION ──────────────────────────────
 async function generateProductContent(rawProduct) {
-  const prompt = `You are a premium copywriter for Vintera, a curated modern lifestyle store. Transform this supplier product into polished, conversion-ready copy.
+  const prompt = `Du är en premium copywriter för Vintera, en modern kurerad livsstilsbutik som säljer i Sverige. Förvandla denna produkt till polerad, konverteringsfokuserad copy på SVENSKA.
 
-Product: ${rawProduct.nameEn || rawProduct.name}
-Category: ${rawProduct.categoryName || 'General'}
-Supplier description: ${rawProduct.description || 'Not provided'}
-Cost price: ${rawProduct.sellPrice || '?'} USD
+Produkt: ${rawProduct.nameEn || rawProduct.name}
+Kategori: ${rawProduct.categoryName || 'Allmänt'}
+Beskrivning: ${rawProduct.description || 'Inte angiven'}
+Kostpris: ${rawProduct.sellPrice || '?'} USD
 
-Write EXACTLY in this format:
+Skriv EXAKT i detta format:
 
-TITLE: [Clean brand-style title, max 8 words, no supplier language]
+TITLE: [Rent varumärkestitel, max 8 ord, inget leverantörsspråk, på svenska]
 
-META: [SEO meta description, max 155 chars, benefit-first]
+META: [SEO-metabeskrivning, max 155 tecken, fördel-först, på svenska]
 
-DESCRIPTION: [2 short paragraphs, premium lifestyle tone, no hyperbole]
+DESCRIPTION: [2 korta stycken, premium livsstilston, ingen överdrift, på svenska]
 
 BENEFITS:
-• [Benefit with bold lead word — specific and useful]
-• [Benefit with bold lead word — specific and useful]
-• [Benefit with bold lead word — specific and useful]
+• [Fördel med fetstilt ledord — specifik och användbar, på svenska]
+• [Fördel med fetstilt ledord — specifik och användbar, på svenska]
+• [Fördel med fetstilt ledord — specifik och användbar, på svenska]
 
 FAQ:
-Q: [Most asked question about this product]
-A: [Confident, helpful answer]
+Q: [Vanligaste frågan om produkten, på svenska]
+A: [Säkert, hjälpsamt svar, på svenska]
 
-AD_HOOK: [TikTok/Meta hook, max 10 words, curiosity or problem-solution]
+AD_HOOK: [TikTok/Meta-hook, max 10 ord, nyfikenhet eller problem-lösning, på svenska]
 
-TAGS: [5 relevant tags, comma separated, lowercase]
+TAGS: [5 relevanta taggar, kommaseparerade, gemener, på svenska]
 
-Keep everything clean, modern, trustworthy. No "dropshipping", no supplier names, no fake claims.`;
+Håll allt rent, modernt och trovärdigt. Inget "dropshipping", inga leverantörsnamn, inga falska påståenden.`;
 
   const res = await openai.chat.completions.create({
     model: 'gpt-4o',
     max_tokens: 800,
     messages: [
-      { role: 'system', content: 'You are a premium e-commerce copywriter. Return only the formatted content requested, nothing else.' },
+      { role: 'system', content: 'Du är en premium e-handelscopywriter för svenska marknaden. Returnera endast det formaterade innehållet som efterfrågas, inget annat. All text ska vara på svenska.' },
       { role: 'user', content: prompt }
     ]
   });
