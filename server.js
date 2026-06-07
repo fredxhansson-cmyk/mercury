@@ -181,24 +181,22 @@ function parseGeneratedContent(raw) {
 // ── SCORING ENGINE ─────────────────────────────────────────
 function scoreAliProduct(product, index) {
   let score = 0;
-  const price = parseFloat(product.sku?.def?.promotionPrice || product.price?.minPrice || product.salePrice || 10);
-  // Price range score (max 20pts) — sweet spot $5-30
-  if (price >= 3 && price <= 50) score += 20;
-  else if (price < 3) score += 5;
-  else score += 10;
-  // Sales/orders (max 25pts)
-  const orders = parseInt(product.trade?.realTrade || product.orders || 0);
-  score += Math.min(25, orders / 200);
+  // API returns {item: {...}} wrapper — unwrap if needed
+  const p = product.item || product;
+  const price = parseFloat(p.sku?.def?.promotionPrice || p.sku?.def?.price || 5);
+  // Price score (max 20pts) — ignore suspiciously low prices
+  if (price >= 2 && price <= 80) score += 20;
+  else if (price > 0) score += 8;
+  // Sales (max 30pts)
+  const sales = parseInt(p.sales || p.trade?.realTrade || 0);
+  score += Math.min(30, sales / 50);
   // Rating (max 20pts)
-  const rating = parseFloat(product.averageStar || product.rating || 0);
+  const rating = parseFloat(p.averageStarRate || p.averageStar || 0);
   score += Math.round(rating * 4);
-  // Image available (max 15pts)
-  if (product.imageUrl) score += 15;
-  // Review count (max 10pts)
-  const reviews = parseInt(product.evaluate || product.reviews || 0);
-  score += Math.min(10, reviews / 50);
-  // Position bonus (max 10pts)
-  score += Math.max(0, 10 - index);
+  // Image (max 15pts)
+  if (p.image || p.imageUrl) score += 15;
+  // Position bonus (max 15pts)
+  score += Math.max(0, 15 - index);
   return Math.min(100, Math.round(score));
 }
 
@@ -269,10 +267,11 @@ async function runProductResearch() {
       store.stats.totalScanned += products.length;
 
       products.forEach((p, i) => {
-        const item = p.item || p;
-        const score = scoreAliProduct(item, i);
-        if (score >= 50) {
-          candidates.push({ ...item, score, keyword });
+        const score = scoreAliProduct(p, i);
+        if (score >= 40) {
+          // Unwrap item wrapper
+          const item = p.item || p;
+          candidates.push({ ...item, score, keyword, _raw: p });
         }
       });
     }
@@ -286,19 +285,27 @@ async function runProductResearch() {
     for (const product of top) {
       // Skip if already in queue or approved
       const exists = [...store.queue, ...store.products].find(
-        p => p.aliId === (product.itemId||product.productId)
+        p => p.aliId === String(product.itemId||product.productId)
       );
       if (exists) continue;
 
       try {
         // Get full product details + images
-        const detail = await getAliExpressProductDetail(product.itemId||product.productId);
+        // Get images from product data (avoid extra API call)
         const images = [];
-        if (detail?.imageUrl) images.push(detail.imageUrl);
-        if (detail?.imageUrls) images.push(...detail.imageUrls.slice(0,4));
-        if (images.length === 0 && product.imageUrl) images.push(product.imageUrl);
+        const imgBase = product.image || product.imageUrl || '';
+        if (imgBase) {
+          // Fix protocol-relative URLs
+          const fixUrl = u => u.startsWith('//') ? 'https:' + u : u;
+          images.push(fixUrl(imgBase));
+        }
+        // Try to get more images from detail (non-blocking)
+        try {
+          const detail = await getAliExpressProductDetail(product.itemId||product.productId);
+          if (detail?.imageUrl) images.push(detail.imageUrl.startsWith('//') ? 'https:'+detail.imageUrl : detail.imageUrl);
+        } catch(e) {}
 
-        const costUsd = parseFloat(product.sku?.def?.promotionPrice || product.price?.minPrice || product.salePrice || 5);
+        const costUsd = Math.max(2, parseFloat(product.sku?.def?.promotionPrice || product.sku?.def?.price || product.price?.minPrice || product.salePrice || 5));
         const sellSek = Math.round(costUsd * 5 * 9.5);
 
         // Generate AI content
@@ -312,7 +319,7 @@ async function runProductResearch() {
 
         const queueItem = {
           id: `q_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
-          aliId: product.itemId||product.productId,
+          aliId: String(product.itemId||product.productId||Math.random()),
           score: product.score,
           keyword: product.keyword,
           costPrice: costUsd,
