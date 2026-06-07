@@ -26,47 +26,46 @@ let store = {
   }
 };
 
-// ── CJ DROPSHIPPING API ────────────────────────────────────
-async function getCJToken() {
-  try {
-    const res = await axios.post('https://developers.cjdropshipping.com/api2.0/v1/authentication/getAccessToken', {
-      email: process.env.CJ_EMAIL,
-      password: process.env.CJ_PASSWORD
-    });
-    return res.data?.data?.accessToken || null;
-  } catch(e) {
-    console.error('CJ auth failed:', e.message);
-    return null;
+// ── ALIEXPRESS DATAHUB API (via RapidAPI) ─────────────────
+async function searchAliExpressProducts(keyword, limit = 20) {
+  const rapidApiKey = process.env.RAPIDAPI_KEY;
+  if (!rapidApiKey) {
+    console.error('No RAPIDAPI_KEY set');
+    return [];
   }
-}
-
-async function searchCJProducts(token, keyword, limit = 20) {
   try {
-    const res = await axios.get('https://developers.cjdropshipping.com/api2.0/v1/product/list', {
-      headers: { 'CJ-Access-Token': token },
+    const res = await axios.get('https://aliexpress-datahub.p.rapidapi.com/item_search_2', {
+      headers: {
+        'x-rapidapi-host': 'aliexpress-datahub.p.rapidapi.com',
+        'x-rapidapi-key': rapidApiKey
+      },
       params: {
-        productNameEn: keyword,
-        pageNum: 1,
-        pageSize: limit,
-        orderBy: 'ORDER_COUNT',
-        orderType: 'DESC'
+        q: keyword,
+        page: '1',
+        sort: 'SALE_PRICE_ASC'
       }
     });
-    return res.data?.data?.list || [];
+    return res.data?.result?.resultList || [];
   } catch(e) {
-    console.error('CJ search failed:', e.message);
+    console.error('AliExpress search failed:', e.message);
     return [];
   }
 }
 
-async function getCJProductDetail(token, pid) {
+async function getAliExpressProductDetail(itemId) {
+  const rapidApiKey = process.env.RAPIDAPI_KEY;
+  if (!rapidApiKey) return null;
   try {
-    const res = await axios.get(`https://developers.cjdropshipping.com/api2.0/v1/product/query`, {
-      headers: { 'CJ-Access-Token': token },
-      params: { pid }
+    const res = await axios.get('https://aliexpress-datahub.p.rapidapi.com/item_detail_2', {
+      headers: {
+        'x-rapidapi-host': 'aliexpress-datahub.p.rapidapi.com',
+        'x-rapidapi-key': rapidApiKey
+      },
+      params: { itemId: itemId.toString() }
     });
-    return res.data?.data || null;
+    return res.data?.result || null;
   } catch(e) {
+    console.error('AliExpress detail failed:', e.message);
     return null;
   }
 }
@@ -180,6 +179,29 @@ function parseGeneratedContent(raw) {
 }
 
 // ── SCORING ENGINE ─────────────────────────────────────────
+function scoreAliProduct(product, index) {
+  let score = 0;
+  const price = parseFloat(product.sku?.def?.promotionPrice || product.price?.minPrice || product.salePrice || 10);
+  // Price range score (max 20pts) — sweet spot $5-30
+  if (price >= 3 && price <= 50) score += 20;
+  else if (price < 3) score += 5;
+  else score += 10;
+  // Sales/orders (max 25pts)
+  const orders = parseInt(product.trade?.realTrade || product.orders || 0);
+  score += Math.min(25, orders / 200);
+  // Rating (max 20pts)
+  const rating = parseFloat(product.averageStar || product.rating || 0);
+  score += Math.round(rating * 4);
+  // Image available (max 15pts)
+  if (product.imageUrl) score += 15;
+  // Review count (max 10pts)
+  const reviews = parseInt(product.evaluate || product.reviews || 0);
+  score += Math.min(10, reviews / 50);
+  // Position bonus (max 10pts)
+  score += Math.max(0, 10 - index);
+  return Math.min(100, Math.round(score));
+}
+
 function scoreProduct(product, index) {
   let score = 0;
 
@@ -229,10 +251,8 @@ async function runProductResearch() {
   console.log(`[${new Date().toISOString()}] Starting product research...`);
 
   try {
-    // Get CJ token
-    const token = await getCJToken();
-    if (!token) {
-      console.error('No CJ token — check CJ_EMAIL and CJ_PASSWORD in .env');
+    if (!process.env.RAPIDAPI_KEY) {
+      console.error('No RAPIDAPI_KEY — check Railway variables');
       store.syncStatus = 'error';
       return;
     }
@@ -245,13 +265,14 @@ async function runProductResearch() {
     let candidates = [];
 
     for (const keyword of keywords) {
-      const products = await searchCJProducts(token, keyword, 10);
+      const products = await searchAliExpressProducts(keyword, 10);
       store.stats.totalScanned += products.length;
 
       products.forEach((p, i) => {
-        const score = scoreProduct(p, i);
-        if (score >= 55) {
-          candidates.push({ ...p, score, keyword });
+        const item = p.item || p;
+        const score = scoreAliProduct(item, i);
+        if (score >= 50) {
+          candidates.push({ ...item, score, keyword });
         }
       });
     }
@@ -265,34 +286,44 @@ async function runProductResearch() {
     for (const product of top) {
       // Skip if already in queue or approved
       const exists = [...store.queue, ...store.products].find(
-        p => p.cjPid === product.pid
+        p => p.aliId === (product.itemId||product.productId)
       );
       if (exists) continue;
 
       try {
-        // Generate AI content
-        const rawContent = await generateProductContent(product);
-        const content = parseGeneratedContent(rawContent);
+        // Get full product details + images
+        const detail = await getAliExpressProductDetail(product.itemId||product.productId);
+        const images = [];
+        if (detail?.imageUrl) images.push(detail.imageUrl);
+        if (detail?.imageUrls) images.push(...detail.imageUrls.slice(0,4));
+        if (images.length === 0 && product.imageUrl) images.push(product.imageUrl);
 
-        // Pick best 5 images
-        const images = (product.productImageSet || [])
-          .filter(img => img && img.startsWith('http'))
-          .slice(0, 5);
+        const costUsd = parseFloat(product.sku?.def?.promotionPrice || product.price?.minPrice || product.salePrice || 5);
+        const sellSek = Math.round(costUsd * 5 * 9.5);
+
+        // Generate AI content
+        const rawContent = await generateProductContent({
+          nameEn: product.title || product.name || 'Product',
+          description: detail?.description || product.title || '',
+          sellPrice: costUsd,
+          categoryName: product.productType || 'General'
+        });
+        const content = parseGeneratedContent(rawContent);
 
         const queueItem = {
           id: `q_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
-          cjPid: product.pid,
+          aliId: product.itemId||product.productId,
           score: product.score,
           keyword: product.keyword,
-          costPrice: parseFloat(product.sellPrice) || 0,
-          sellPrice: Math.round(parseFloat(product.sellPrice) * 5 * 9.5), // USD to SEK approx
-          margin: Math.round(((parseFloat(product.sellPrice)*5 - parseFloat(product.sellPrice)) / (parseFloat(product.sellPrice)*5)) * 100),
-          category: product.categoryName || 'General',
-          stock: parseInt(product.inventory) || 99,
-          shippingDays: parseInt(product.shippingTime) || 14,
-          images,
+          costPrice: costUsd,
+          sellPrice: sellSek,
+          margin: Math.round(((sellSek - costUsd*9.5) / sellSek) * 100),
+          category: product.productType || 'General',
+          stock: 99,
+          shippingDays: 14,
+          images: images.slice(0,5),
           // AI-generated content
-          title: content.title || product.nameEn,
+          title: content.title || product.title,
           meta: content.meta,
           description: content.description,
           descriptionHtml: content.descriptionHtml,
@@ -300,7 +331,8 @@ async function runProductResearch() {
           adHook: content.adHook,
           tags: content.tags,
           // Raw
-          rawTitle: product.nameEn,
+          rawTitle: product.title || product.name,
+          aliUrl: `https://www.aliexpress.com/item/${product.itemId||product.productId}.html`,
           addedAt: new Date().toISOString(),
           status: 'pending'
         };
@@ -669,7 +701,7 @@ app.listen(PORT, () => {
   console.log(`Mercury Backend running on port ${PORT}`);
   console.log('Shopify:', process.env.SHOPIFY_DOMAIN || 'NOT SET');
   console.log('OpenAI:', process.env.OPENAI_API_KEY ? 'SET' : 'NOT SET');
-  console.log('CJ:', process.env.CJ_EMAIL || 'NOT SET');
+  console.log('RapidAPI:', process.env.RAPIDAPI_KEY ? 'SET' : 'NOT SET');
   console.log('Make.com:', process.env.MAKE_WEBHOOK_URL ? 'SET' : 'NOT SET');
   console.log('Email:', process.env.RESEND_API_KEY ? 'SET' : 'NOT SET');
   console.log('Orbit:', process.env.ORBIT_API_URL ? 'SET' : 'NOT SET');
