@@ -794,7 +794,7 @@ app.post('/api/approve/:id', async (req, res) => {
 });
 
 // Reject product
-app.post('/api/reject/:id', (req, res) => {
+app.post('/api/reject/:id', async (req, res) => {
   const item = store.queue.find(p => p.id === req.params.id);
   if (!item) return res.status(404).json({ error: 'Not found' });
   item.status = 'rejected';
