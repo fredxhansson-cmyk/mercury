@@ -4,6 +4,63 @@ const cors = require('cors');
 const cron = require('node-cron');
 const axios = require('axios');
 const OpenAI = require('openai');
+const { Pool } = require('pg');
+
+// ── DATABASE ───────────────────────────────────────────────
+let db = null;
+async function initDB() {
+  if (!process.env.DATABASE_URL) {
+    console.log('No DATABASE_URL — using in-memory storage');
+    return;
+  }
+  try {
+    db = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS queue (
+        id TEXT PRIMARY KEY,
+        data JSONB NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+      CREATE TABLE IF NOT EXISTS products (
+        id TEXT PRIMARY KEY,
+        data JSONB NOT NULL,
+        approved_at TIMESTAMP DEFAULT NOW()
+      );
+      CREATE TABLE IF NOT EXISTS removed (
+        id TEXT PRIMARY KEY,
+        data JSONB NOT NULL,
+        removed_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    console.log('✓ Database connected and tables ready');
+    // Load existing data into memory
+    const q = await db.query('SELECT data FROM queue ORDER BY created_at DESC');
+    const p = await db.query('SELECT data FROM products ORDER BY approved_at DESC');
+    store.queue = q.rows.map(r => r.data);
+    store.products = p.rows.map(r => r.data);
+    console.log(`Loaded ${store.queue.length} queued, ${store.products.length} approved products from DB`);
+  } catch(e) {
+    console.error('DB init failed — using in-memory:', e.message);
+    db = null;
+  }
+}
+
+async function dbSave(table, item) {
+  if (!db) return;
+  try {
+    await db.query(
+      `INSERT INTO ${table} (id, data) VALUES ($1, $2) ON CONFLICT (id) DO UPDATE SET data = $2`,
+      [item.id, JSON.stringify(item)]
+    );
+  } catch(e) { console.error('DB save failed:', e.message); }
+}
+
+async function dbDelete(table, id) {
+  if (!db) return;
+  try {
+    await db.query(`DELETE FROM ${table} WHERE id = $1`, [id]);
+  } catch(e) { console.error('DB delete failed:', e.message); }
+}
 
 const app = express();
 app.use(cors());
@@ -87,6 +144,54 @@ async function getAliExpressProductDetail(itemId) {
     console.error('AliExpress detail failed:', e.message);
     return null;
   }
+}
+
+// ── CJ DROPSHIPPING API ───────────────────────────────────
+async function getCJToken() {
+  try {
+    const res = await axios.post('https://developers.cjdropshipping.com/api2.0/v1/authentication/getAccessToken', {
+      email: process.env.CJ_EMAIL,
+      password: process.env.CJ_PASSWORD
+    });
+    if (res.data?.data?.accessToken) {
+      console.log('✓ CJ token acquired');
+      return res.data.data.accessToken;
+    }
+    console.error('CJ auth failed:', res.data?.message);
+    return null;
+  } catch(e) {
+    console.error('CJ auth error:', e.message);
+    return null;
+  }
+}
+
+async function searchCJProducts(token, keyword, limit = 20) {
+  try {
+    const res = await axios.get('https://developers.cjdropshipping.com/api2.0/v1/product/list', {
+      headers: { 'CJ-Access-Token': token },
+      params: { productNameEn: keyword, pageNum: 1, pageSize: limit, orderBy: 'ORDER_COUNT', orderType: 'DESC' }
+    });
+    return res.data?.data?.list || [];
+  } catch(e) {
+    console.error('CJ search failed:', e.message);
+    return [];
+  }
+}
+
+function scoreCJProduct(product, index) {
+  let score = 0;
+  const price = parseFloat(product.sellPrice) || 10;
+  if (price >= 2 && price <= 80) score += 20;
+  else score += 8;
+  const orders = parseInt(product.orderCount) || 0;
+  score += Math.min(25, orders / 100);
+  const imgs = product.productImageSet?.length || 0;
+  score += Math.min(15, imgs * 3);
+  const ship = parseInt(product.shippingTime) || 20;
+  score += Math.max(0, 15 - ship);
+  if (product.variants?.length > 1) score += 10;
+  score += Math.max(0, 15 - index);
+  return Math.min(100, Math.round(score));
 }
 
 // ── SHOPIFY API ────────────────────────────────────────────
@@ -268,45 +373,88 @@ async function runProductResearch() {
   console.log(`[${new Date().toISOString()}] Starting product research...`);
 
   try {
-    if (!process.env.RAPIDAPI_KEY) {
-      console.error('No RAPIDAPI_KEY — check Railway variables');
-      store.syncStatus = 'error';
-      return;
-    }
-
-    // Pick 3 random keywords this cycle
     const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
     const keywords = shuffle(TREND_KEYWORDS).slice(0, 3);
     console.log('Researching keywords:', keywords);
 
     let candidates = [];
 
-    for (const keyword of keywords) {
-      const products = await searchAliExpressProducts(keyword, 10);
-      store.stats.totalScanned += products.length;
+    // ── SOURCE 1: AliExpress ──
+    if (process.env.RAPIDAPI_KEY) {
+      console.log('Searching AliExpress...');
+      for (const keyword of keywords) {
+        const products = await searchAliExpressProducts(keyword, 10);
+        store.stats.totalScanned += products.length;
+        products.forEach((p, i) => {
+          const score = scoreAliProduct(p, i);
+          if (score >= 40) {
+            const item = p.item || p;
+            candidates.push({ ...item, score, keyword, source: 'aliexpress', _raw: p });
+          }
+        });
+      }
+      console.log(`AliExpress: ${candidates.length} candidates found`);
+    } else {
+      console.log('No RAPIDAPI_KEY — skipping AliExpress');
+    }
 
-      products.forEach((p, i) => {
-        const score = scoreAliProduct(p, i);
-        if (score >= 40) {
-          // Unwrap item wrapper
-          const item = p.item || p;
-          candidates.push({ ...item, score, keyword, _raw: p });
+    // ── SOURCE 2: CJ Dropshipping ──
+    if (process.env.CJ_EMAIL && process.env.CJ_PASSWORD) {
+      console.log('Searching CJ Dropshipping...');
+      const cjToken = await getCJToken();
+      if (cjToken) {
+        const cjKeywords = shuffle(TREND_KEYWORDS).slice(0, 3);
+        for (const keyword of cjKeywords) {
+          const products = await searchCJProducts(cjToken, keyword, 10);
+          store.stats.totalScanned += products.length;
+          products.forEach((p, i) => {
+            const score = scoreCJProduct(p, i);
+            if (score >= 40) {
+              candidates.push({
+                ...p,
+                score,
+                keyword,
+                source: 'cj',
+                title: p.nameEn || p.name,
+                itemId: p.pid,
+                image: p.productImageSet?.[0] || '',
+                salePrice: p.sellPrice,
+              });
+            }
+          });
         }
-      });
+        console.log(`CJ: total ${candidates.length} combined candidates`);
+      }
+    } else {
+      console.log('No CJ credentials — skipping CJ');
+    }
+
+    if (candidates.length === 0) {
+      console.log('No candidates found from any source');
+      store.syncStatus = 'idle';
+      return;
     }
 
     // Sort by score, take top 5
     candidates.sort((a, b) => b.score - a.score);
-    const top = candidates.slice(0, 10);
+    const top = candidates.slice(0, 5);
 
     console.log(`Found ${candidates.length} candidates, processing top ${top.length}`);
 
     for (const product of top) {
       // Skip if already in queue or approved
-      const exists = [...store.queue, ...store.products].find(
-        p => p.aliId === String(product.itemId||product.productId)
+      // Skip if exact ID match
+      const idExists = [...store.queue, ...store.products].find(
+        p => p.aliId === String(product.itemId||product.productId||product.pid)
       );
-      if (exists) continue;
+      if (idExists) continue;
+
+      // Skip if very similar title already in queue (duplicate from different source)
+      const productTitle = (product.title||product.nameEn||'').toLowerCase().slice(0,30);
+      const titleExists = productTitle.length > 5 && [...store.queue, ...store.products].find(
+        p => p.rawTitle?.toLowerCase().slice(0,30) === productTitle
+      );
+      if (titleExists) continue;
 
       try {
         // Get full product details + images
@@ -367,6 +515,7 @@ async function runProductResearch() {
 
         store.queue.push(queueItem);
         store.stats.totalQueued++;
+        await dbSave('queue', queueItem);
         console.log(`✓ Queued: ${content.title} (score: ${product.score})`);
 
         // Notify via Make + Email when product added to queue
@@ -606,6 +755,8 @@ app.post('/api/approve/:id', async (req, res) => {
     store.products.push(item);
     store.queue = store.queue.filter(p => p.id !== req.params.id);
     store.stats.totalApproved++;
+    await dbSave('products', item);
+    await dbDelete('queue', item.id);
 
     // Trigger all integrations in background (non-blocking)
     Promise.all([
@@ -650,6 +801,8 @@ app.post('/api/reject/:id', (req, res) => {
   store.removed.push(item);
   store.queue = store.queue.filter(p => p.id !== req.params.id);
   store.stats.totalRejected++;
+  await dbDelete('queue', item.id);
+  await dbSave('removed', item);
   res.json({ ok: true });
 });
 
@@ -712,7 +865,7 @@ app.get('/api/dashboard', (req, res) => {
 });
 
 // ── CRON: Run every 6 hours ────────────────────────────────
-cron.schedule('0 */6 * * *', () => {
+cron.schedule('0 */12 * * *', () => {
   console.log('Cron: Starting scheduled research...');
   runProductResearch();
 });
@@ -725,11 +878,13 @@ cron.schedule('0 * * * *', () => {
 
 // ── START ──────────────────────────────────────────────────
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
+  await initDB();
   console.log(`Mercury Backend running on port ${PORT}`);
   console.log('Shopify:', process.env.SHOPIFY_DOMAIN || 'NOT SET');
   console.log('OpenAI:', process.env.OPENAI_API_KEY ? 'SET' : 'NOT SET');
   console.log('RapidAPI:', process.env.RAPIDAPI_KEY ? 'SET' : 'NOT SET');
+  console.log('CJ:', process.env.CJ_EMAIL ? process.env.CJ_EMAIL : 'NOT SET');
   console.log('Make.com:', process.env.MAKE_WEBHOOK_URL ? 'SET' : 'NOT SET');
   console.log('Email:', process.env.RESEND_API_KEY ? 'SET' : 'NOT SET');
   console.log('Orbit:', process.env.ORBIT_API_URL ? 'SET' : 'NOT SET');

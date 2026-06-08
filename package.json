@@ -1,7 +1,7 @@
 {
   "name": "mercury-backend",
   "version": "1.0.0",
-  "description": "Mercury AI — Automated product research backend",
+  "description": "Mercury AI \u2014 Automated product research backend",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -13,6 +13,7 @@
     "node-cron": "^3.0.3",
     "axios": "^1.6.0",
     "openai": "^4.20.0",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "pg": "^8.11.3"
   }
 }
