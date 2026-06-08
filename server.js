@@ -148,21 +148,38 @@ async function getAliExpressProductDetail(itemId) {
 
 // ── CJ DROPSHIPPING API ───────────────────────────────────
 async function getCJToken() {
-  try {
-    const res = await axios.post('https://developers.cjdropshipping.com/api2.0/v1/authentication/getAccessToken', {
-      email: process.env.CJ_EMAIL,
-      password: process.env.CJ_PASSWORD
-    });
-    if (res.data?.data?.accessToken) {
-      console.log('✓ CJ token acquired');
-      return res.data.data.accessToken;
+  // Try API key first (new method)
+  if (process.env.CJ_API_KEY) {
+    try {
+      const res = await axios.post('https://developers.cjdropshipping.com/api2.0/v1/authentication/getAccessToken', {
+        apiKey: process.env.CJ_API_KEY
+      });
+      if (res.data?.data?.accessToken) {
+        console.log('✓ CJ token acquired via API key');
+        return res.data.data.accessToken;
+      }
+      console.error('CJ API key auth failed:', res.data?.message);
+    } catch(e) {
+      console.error('CJ API key auth error:', e.message);
     }
-    console.error('CJ auth failed:', res.data?.message);
-    return null;
-  } catch(e) {
-    console.error('CJ auth error:', e.message);
-    return null;
   }
+  // Fallback to email/password
+  if (process.env.CJ_EMAIL && process.env.CJ_PASSWORD) {
+    try {
+      const res = await axios.post('https://developers.cjdropshipping.com/api2.0/v1/authentication/getAccessToken', {
+        email: process.env.CJ_EMAIL,
+        password: process.env.CJ_PASSWORD
+      });
+      if (res.data?.data?.accessToken) {
+        console.log('✓ CJ token acquired via email/password');
+        return res.data.data.accessToken;
+      }
+      console.error('CJ email auth failed:', res.data?.message);
+    } catch(e) {
+      console.error('CJ email auth error:', e.message);
+    }
+  }
+  return null;
 }
 
 async function searchCJProducts(token, keyword, limit = 20) {
@@ -884,7 +901,7 @@ app.listen(PORT, async () => {
   console.log('Shopify:', process.env.SHOPIFY_DOMAIN || 'NOT SET');
   console.log('OpenAI:', process.env.OPENAI_API_KEY ? 'SET' : 'NOT SET');
   console.log('RapidAPI:', process.env.RAPIDAPI_KEY ? 'SET' : 'NOT SET');
-  console.log('CJ:', process.env.CJ_EMAIL ? process.env.CJ_EMAIL : 'NOT SET');
+  console.log('CJ:', process.env.CJ_API_KEY ? 'API Key SET' : (process.env.CJ_EMAIL || 'NOT SET'));
   console.log('Make.com:', process.env.MAKE_WEBHOOK_URL ? 'SET' : 'NOT SET');
   console.log('Email:', process.env.RESEND_API_KEY ? 'SET' : 'NOT SET');
   console.log('Orbit:', process.env.ORBIT_API_URL ? 'SET' : 'NOT SET');
