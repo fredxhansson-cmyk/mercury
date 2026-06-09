@@ -223,7 +223,7 @@ function scoreCJProduct(product, index) {
 // ── SHOPIFY API ────────────────────────────────────────────
 async function publishToShopify(product) {
   const domain = process.env.SHOPIFY_DOMAIN;
-  const token  = process.env.SHOPIFY_TOKEN;
+  const token  = process.env.SHOP_TOKEN || process.env.SHOPIFY_TOKEN;
   if(!domain || !token) throw new Error('Shopify not configured');
 
   const payload = {
@@ -443,10 +443,12 @@ async function runProductResearch() {
                 score,
                 keyword,
                 source: 'cj',
-                title: p.nameEn || p.name,
+                title: p.nameEn || p.name || p.productNameEn || '',
                 itemId: p.pid,
-                image: p.productImageSet?.[0] || '',
+                image: (p.productImageSet || [])[0] || '',
+                images: p.productImageSet || [],
                 salePrice: p.sellPrice,
+                costPrice: parseFloat(p.sellPrice) || 5,
               });
             }
           });
@@ -492,9 +494,11 @@ async function runProductResearch() {
         const isCJProduct = product.source === 'cj';
 
         if (isCJProduct) {
-          // CJ images are in productImageSet array
-          const cjImgs = product.productImageSet || [];
-          cjImgs.slice(0,5).forEach(img => { if(img) images.push(img); });
+          // CJ images — use pre-stored images array or productImageSet
+          const cjImgs = product.images || product.productImageSet || [];
+          cjImgs.slice(0,5).forEach(img => { if(img && typeof img === 'string') images.push(img); });
+          // If no images, try the single image field
+          if (images.length === 0 && product.image) images.push(product.image);
         } else {
           // AliExpress images
           const imgBase = fixUrl(product.image || product.imageUrl || '');
@@ -513,12 +517,13 @@ async function runProductResearch() {
         const sellSek = snapPrice(rawSek);
 
         // Generate AI content
-        const productName = product.title || product.name || product.subject || 'Trending Product';
+        const productName = product.title || product.nameEn || product.name || product.subject || product.productNameEn || 'Trending Product';
+        const productDesc = product.productNameEn || product.nameEn || product.name || productName;
         const rawContent = await generateProductContent({
           nameEn: productName,
-          description: productName,
+          description: productDesc,
           sellPrice: costUsd,
-          categoryName: product.productType || product.category || 'General'
+          categoryName: product.productType || product.categoryName || product.category || 'General'
         });
         const content = parseGeneratedContent(rawContent);
 
@@ -699,7 +704,7 @@ async function sendEmailNotification(subject, html) {
 // ── SHOPIFY PERFORMANCE TRACKING ─────────────────────────
 async function syncShopifyPerformance() {
   const domain = process.env.SHOPIFY_DOMAIN;
-  const token  = process.env.SHOPIFY_TOKEN;
+  const token  = process.env.SHOP_TOKEN || process.env.SHOPIFY_TOKEN;
   if (!domain || !token) return;
 
   try {
