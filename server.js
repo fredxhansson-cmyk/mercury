@@ -394,7 +394,7 @@ async function publishToShopify(product) {
     product: {
       title: product.title,
       body_html: product.descriptionHtml,
-      vendor: 'Vintera',
+      vendor: product.shopifyCollection || product.category || 'Meloni',
       product_type: product.category,
       tags: product.tags?.join(','),
       status: 'active',
@@ -420,7 +420,7 @@ async function publishToShopify(product) {
           type: 'single_line_text_field'
         }
       ],
-      images: product.images?.slice(0, 5).map(url => ({ src: url }))
+      images: (product.images||[]).filter(u=>u&&u.startsWith('http')).slice(0, 5).map(url => ({ src: url, position: (product.images||[]).indexOf(url) + 1 }))
     }
   };
 
@@ -683,12 +683,41 @@ async function runProductResearch() {
         const isCJProduct = product.source === 'cj';
 
         if (isCJProduct) {
-          // CJ primary image
-          if (product.productImage) images.push(product.productImage);
-          if (product.image && !images.includes(product.image)) images.push(product.image);
-          // Additional images
+          // Skip index 0 (often marketing image with logos/text) - start from index 1
+          // But save it as fallback
+          const primaryFallback = product.productImage || product.image || '';
+          // Try to get more images from CJ product detail API
+          try {
+            const cjToken = await getCJToken();
+            if (cjToken && (product.pid || product.aliId)) {
+              const detailRes = await axios.get('https://developers.cjdropshipping.com/api2.0/v1/product/query', {
+                headers: { 'CJ-Access-Token': cjToken },
+                params: { pid: product.pid || product.aliId }
+              });
+              const detail = detailRes.data?.data;
+              if (detail) {
+                // Get all product images
+                const detailImgs = detail.productImageSet || [];
+                detailImgs.forEach(img => {
+                  if (img && typeof img === 'string' && !images.includes(img)) images.push(img);
+                });
+                // Get variant images too
+                const variants = detail.variants || detail.productVariants || [];
+                variants.forEach(v => {
+                  if (v.variantImage && !images.includes(v.variantImage)) images.push(v.variantImage);
+                });
+              }
+            }
+          } catch(e) {}
+          // Use pre-stored images, skip first (marketing image)
           const cjImgs = product.images || product.productImageSet || [];
-          cjImgs.forEach(img => { if(img && typeof img === 'string' && !images.includes(img)) images.push(img); });
+          // Start from index 1 to skip typical marketing/hero image
+          const cleanImgs = cjImgs.slice(1);
+          cleanImgs.forEach(img => { if(img && typeof img === 'string' && !images.includes(img)) images.push(img); });
+          // If we got no images, use primary as fallback
+          if (images.length === 0 && primaryFallback) images.push(primaryFallback);
+          // Add first image at end as last resort
+          else if (images.length < 3 && cjImgs[0] && !images.includes(cjImgs[0])) images.push(cjImgs[0]);
         } else {
           // AliExpress images
           const imgBase = fixUrl(product.image || product.imageUrl || '');
