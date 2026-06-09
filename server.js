@@ -195,9 +195,15 @@ async function searchCJProducts(token, keyword, limit = 20) {
       headers: { 'CJ-Access-Token': token },
       params: { productNameEn: keyword, pageNum: 1, pageSize: limit, orderBy: 'ORDER_COUNT', orderType: 'DESC' }
     });
-    return res.data?.data?.list || [];
+    const list = res.data?.data?.list || [];
+    console.log(`CJ "${keyword}": ${list.length} results (msg: ${res.data?.message})`);
+    return list;
   } catch(e) {
-    console.error('CJ search failed:', e.message);
+    if (e.response?.status === 429) {
+      console.error('CJ rate limit hit — waiting...');
+    } else {
+      console.error('CJ search failed:', e.response?.status, e.message);
+    }
     return [];
   }
 }
