@@ -614,7 +614,7 @@ async function runProductResearch() {
             const shipDays = parseInt(p.shippingTime) || 99;
             if (shipDays > MAX_SHIPPING_DAYS) {
               console.log(`⏱ Skipped slow shipping: ${p.nameEn||p.name} (${shipDays} days)`);
-              continue;
+              return; // forEach uses return, not continue
             }
             if (score >= 20) {
               candidates.push({
