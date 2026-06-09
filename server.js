@@ -102,6 +102,154 @@ function snapPrice(rawSek) {
   return closest;
 }
 
+
+// ── CATEGORY MAPPING ──────────────────────────────────────
+const CATEGORY_MAP = {
+  // Sports & Fitness
+  'sports': { sv: 'Fitness & Hälsa', tag: 'fitness', shopify: 'Fitness & Hälsa' },
+  'fitness': { sv: 'Fitness & Hälsa', tag: 'fitness', shopify: 'Fitness & Hälsa' },
+  'exercise': { sv: 'Fitness & Hälsa', tag: 'fitness', shopify: 'Fitness & Hälsa' },
+  'yoga': { sv: 'Fitness & Hälsa', tag: 'fitness', shopify: 'Fitness & Hälsa' },
+  'outdoor': { sv: 'Fitness & Hälsa', tag: 'fitness', shopify: 'Fitness & Hälsa' },
+
+  // Beauty & Health
+  'beauty': { sv: 'Skönhet & Välmående', tag: 'skönhet', shopify: 'Skönhet & Välmående' },
+  'health': { sv: 'Skönhet & Välmående', tag: 'hälsa', shopify: 'Skönhet & Välmående' },
+  'personal care': { sv: 'Skönhet & Välmående', tag: 'skönhet', shopify: 'Skönhet & Välmående' },
+  'massage': { sv: 'Skönhet & Välmående', tag: 'välmående', shopify: 'Skönhet & Välmående' },
+  'skin': { sv: 'Skönhet & Välmående', tag: 'skönhet', shopify: 'Skönhet & Välmående' },
+
+  // Home & Garden
+  'home': { sv: 'Hem & Inredning', tag: 'hem', shopify: 'Hem & Inredning' },
+  'garden': { sv: 'Hem & Inredning', tag: 'hem', shopify: 'Hem & Inredning' },
+  'kitchen': { sv: 'Hem & Inredning', tag: 'kök', shopify: 'Hem & Inredning' },
+  'household': { sv: 'Hem & Inredning', tag: 'hem', shopify: 'Hem & Inredning' },
+  'furniture': { sv: 'Hem & Inredning', tag: 'inredning', shopify: 'Hem & Inredning' },
+  'lighting': { sv: 'Hem & Inredning', tag: 'belysning', shopify: 'Hem & Inredning' },
+
+  // Tech & Gadgets
+  'electronics': { sv: 'Tech & Gadgets', tag: 'tech', shopify: 'Tech & Gadgets' },
+  'tech': { sv: 'Tech & Gadgets', tag: 'tech', shopify: 'Tech & Gadgets' },
+  'gadget': { sv: 'Tech & Gadgets', tag: 'tech', shopify: 'Tech & Gadgets' },
+  'phone': { sv: 'Tech & Gadgets', tag: 'tech', shopify: 'Tech & Gadgets' },
+  'computer': { sv: 'Tech & Gadgets', tag: 'tech', shopify: 'Tech & Gadgets' },
+  'camera': { sv: 'Tech & Gadgets', tag: 'tech', shopify: 'Tech & Gadgets' },
+
+  // Fashion & Accessories
+  'apparel': { sv: 'Mode & Accessoarer', tag: 'mode', shopify: 'Mode & Accessoarer' },
+  'fashion': { sv: 'Mode & Accessoarer', tag: 'mode', shopify: 'Mode & Accessoarer' },
+  'clothing': { sv: 'Mode & Accessoarer', tag: 'mode', shopify: 'Mode & Accessoarer' },
+  'accessories': { sv: 'Mode & Accessoarer', tag: 'accessoarer', shopify: 'Mode & Accessoarer' },
+  'jewelry': { sv: 'Mode & Accessoarer', tag: 'smycken', shopify: 'Mode & Accessoarer' },
+  'watches': { sv: 'Mode & Accessoarer', tag: 'klockor', shopify: 'Mode & Accessoarer' },
+  'bags': { sv: 'Mode & Accessoarer', tag: 'väskor', shopify: 'Mode & Accessoarer' },
+
+  // Pets
+  'pet': { sv: 'Husdjur', tag: 'husdjur', shopify: 'Husdjur' },
+  'dog': { sv: 'Husdjur', tag: 'husdjur', shopify: 'Husdjur' },
+  'cat': { sv: 'Husdjur', tag: 'husdjur', shopify: 'Husdjur' },
+
+  // Baby & Kids
+  'baby': { sv: 'Barn & Baby', tag: 'barn', shopify: 'Barn & Baby' },
+  'kids': { sv: 'Barn & Baby', tag: 'barn', shopify: 'Barn & Baby' },
+  'toy': { sv: 'Barn & Baby', tag: 'leksaker', shopify: 'Barn & Baby' },
+
+  // Travel & Outdoor
+  'travel': { sv: 'Resor & Outdoor', tag: 'resor', shopify: 'Resor & Outdoor' },
+  'camping': { sv: 'Resor & Outdoor', tag: 'outdoor', shopify: 'Resor & Outdoor' },
+  'hiking': { sv: 'Resor & Outdoor', tag: 'outdoor', shopify: 'Resor & Outdoor' },
+};
+
+function mapCategory(rawCategory, productTitle) {
+  const text = (rawCategory + ' ' + productTitle).toLowerCase();
+  for (const [key, val] of Object.entries(CATEGORY_MAP)) {
+    if (text.includes(key)) return val;
+  }
+  return { sv: 'Livsstil', tag: 'livsstil', shopify: 'Livsstil' };
+}
+
+// Create Shopify collection if it doesn't exist
+const shopifyCollections = {};
+async function getOrCreateCollection(name) {
+  if (shopifyCollections[name]) return shopifyCollections[name];
+  const domain = process.env.SHOPIFY_DOMAIN;
+  const token = process.env.SHOP_TOKEN || process.env.SHOPIFY_TOKEN;
+  if (!domain || !token) return null;
+  try {
+    // Check if collection exists
+    const res = await axios.get(
+      `https://${domain}/admin/api/2024-01/custom_collections.json?title=${encodeURIComponent(name)}`,
+      { headers: { 'X-Shopify-Access-Token': token } }
+    );
+    let col = res.data.custom_collections?.[0];
+    if (!col) {
+      // Create collection
+      const createRes = await axios.post(
+        `https://${domain}/admin/api/2024-01/custom_collections.json`,
+        { custom_collection: { title: name, published: true } },
+        { headers: { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' } }
+      );
+      col = createRes.data.custom_collection;
+      console.log(`✓ Created Shopify collection: ${name}`);
+    }
+    shopifyCollections[name] = col.id;
+    return col.id;
+  } catch(e) {
+    console.error('Collection error:', e.message);
+    return null;
+  }
+}
+
+async function addProductToCollection(productId, collectionName) {
+  const domain = process.env.SHOPIFY_DOMAIN;
+  const token = process.env.SHOP_TOKEN || process.env.SHOPIFY_TOKEN;
+  if (!domain || !token || !productId) return;
+  try {
+    const colId = await getOrCreateCollection(collectionName);
+    if (!colId) return;
+    await axios.post(
+      `https://${domain}/admin/api/2024-01/collects.json`,
+      { collect: { product_id: productId, collection_id: colId } },
+      { headers: { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' } }
+    );
+    console.log(`✓ Added product ${productId} to collection "${collectionName}"`);
+  } catch(e) {
+    if (!e.message.includes('taken')) console.error('Collection add error:', e.message);
+  }
+}
+
+
+// ── CONTENT FILTER ────────────────────────────────────────
+const BLOCKED_KEYWORDS = [
+  // Adult/sexual
+  'sex','adult','erotic','porn','nude','lingerie','vibrat','dildo','condom','penis','vagina',
+  // Weapons
+  'gun','weapon','knife','sword','bullet','ammo','firearm','pistol','rifle','grenade',
+  // Drugs/alcohol
+  'drug','cannabis','marijuana','cocaine','alcohol','beer','wine','vodka','cigarette','tobacco','vape',
+  // Other
+  'gambling','casino','betting','fake','replica','counterfeit'
+];
+
+function isProductBlocked(product) {
+  const text = [
+    product.title, product.nameEn, product.name,
+    product.categoryName, product.description
+  ].join(' ').toLowerCase();
+  
+  for (const kw of BLOCKED_KEYWORDS) {
+    if (text.includes(kw)) {
+      console.log(`⛔ Blocked product "${product.title||product.nameEn}" — contains: "${kw}"`);
+      return true;
+    }
+  }
+  return false;
+}
+
+// Auto-publish threshold
+const AUTO_PUBLISH_SCORE = 80; // Products scoring 80+ go live automatically
+const MIN_SCORE = 60;          // Products below 60 are rejected
+
 // ── ALIEXPRESS DATAHUB API (via RapidAPI) ─────────────────
 let aliExpressDisabled = false; // Auto-disable if quota exceeded
 
@@ -197,10 +345,6 @@ async function searchCJProducts(token, keyword, limit = 20) {
     });
     const list = res.data?.data?.list || [];
     console.log(`CJ "${keyword}": ${list.length} results (msg: ${res.data?.message})`);
-    if (list.length > 0) {
-      const sample = list[0];
-      console.log(`CJ image fields: productImage=${!!sample.productImage}, productImageSet=${sample.productImageSet?.length||0}, imageUrl=${!!sample.imageUrl}`);
-    }
     return list;
   } catch(e) {
     if (e.response?.status === 429) {
@@ -449,8 +593,8 @@ async function runProductResearch() {
                 source: 'cj',
                 title: p.nameEn || p.name || p.productNameEn || '',
                 itemId: p.pid,
-                image: (p.productImageSet || [])[0] || '',
-                images: p.productImageSet || [],
+                image: p.productImage || (p.productImageSet || [])[0] || '',
+                images: p.productImage ? [p.productImage] : (p.productImageSet || []),
                 salePrice: p.sellPrice,
                 costPrice: parseFloat(p.sellPrice) || 5,
               });
@@ -477,6 +621,12 @@ async function runProductResearch() {
 
     for (const product of top) {
       // Skip if already in queue or approved
+      // Block inappropriate products
+      if (isProductBlocked(product)) {
+        store.stats.totalRejected++;
+        continue;
+      }
+
       // Skip if exact ID match
       const idExists = [...store.queue, ...store.products].find(
         p => p.aliId === String(product.itemId||product.productId||product.pid)
@@ -498,11 +648,12 @@ async function runProductResearch() {
         const isCJProduct = product.source === 'cj';
 
         if (isCJProduct) {
-          // CJ images — use pre-stored images array or productImageSet
+          // CJ primary image
+          if (product.productImage) images.push(product.productImage);
+          if (product.image && !images.includes(product.image)) images.push(product.image);
+          // Additional images
           const cjImgs = product.images || product.productImageSet || [];
-          cjImgs.slice(0,5).forEach(img => { if(img && typeof img === 'string') images.push(img); });
-          // If no images, try the single image field
-          if (images.length === 0 && product.image) images.push(product.image);
+          cjImgs.forEach(img => { if(img && typeof img === 'string' && !images.includes(img)) images.push(img); });
         } else {
           // AliExpress images
           const imgBase = fixUrl(product.image || product.imageUrl || '');
@@ -550,13 +701,39 @@ async function runProductResearch() {
           descriptionHtml: content.descriptionHtml,
           benefits: content.benefits,
           adHook: content.adHook,
-          tags: content.tags,
+          tags: [...(content.tags||[]), mapCategory(product.categoryName || product.productType || '', product.title || product.nameEn || '').tag],
           // Raw
           rawTitle: product.title || product.name || product.subject || 'Product',
           aliUrl: `https://www.aliexpress.com/item/${product.itemId||product.productId}.html`,
           addedAt: new Date().toISOString(),
-          status: 'pending'
+          status: 'pending',
+          autoPublish: product.score >= AUTO_PUBLISH_SCORE
         };
+
+        // Auto-publish high-score products directly to Shopify
+        if (queueItem.autoPublish) {
+          console.log(`🚀 Auto-publishing: ${content.title} (score: ${product.score})`);
+          try {
+            const shopifyProduct = await publishToShopify(queueItem);
+            queueItem.status = 'approved';
+            queueItem.shopifyId = shopifyProduct.id;
+            queueItem.approvedAt = new Date().toISOString();
+            store.products.push(queueItem);
+            store.stats.totalApproved++;
+            await dbSave('products', queueItem);
+            if (queueItem.shopifyCollection && shopifyProduct.id) {
+              addProductToCollection(shopifyProduct.id, queueItem.shopifyCollection).catch(()=>{});
+            }
+            console.log(`✓ Auto-published: ${content.title} → Shopify ID ${shopifyProduct.id}`);
+            // Trigger integrations
+            triggerMakeWebhook('product_approved', { title: queueItem.title, price: queueItem.sellPrice, shopifyId: shopifyProduct.id, images: queueItem.images?.slice(0,1) });
+            sendEmailNotification(`🚀 Auto-published: ${queueItem.title}`, `<h2>${queueItem.title}</h2><p>Score: ${queueItem.score}/100 — Auto-published to Vintera</p>${queueItem.images?.[0]?`<img src="${queueItem.images[0]}" style="max-width:300px;border-radius:8px"/>`:''}`);
+            continue;
+          } catch(publishErr) {
+            console.error('Auto-publish failed, adding to queue instead:', publishErr.message);
+            queueItem.autoPublish = false;
+          }
+        }
 
         store.queue.push(queueItem);
         store.stats.totalQueued++;
@@ -834,6 +1011,11 @@ app.post('/api/approve/:id', async (req, res) => {
     store.stats.totalApproved++;
     await dbSave('products', item);
     await dbDelete('queue', item.id);
+
+    // Add to Shopify collection
+    if (item.shopifyCollection && shopifyProduct.id) {
+      addProductToCollection(shopifyProduct.id, item.shopifyCollection).catch(e => console.error('Collection error:', e.message));
+    }
 
     // Trigger all integrations in background (non-blocking)
     Promise.all([
