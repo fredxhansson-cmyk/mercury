@@ -6,6 +6,17 @@ const axios = require('axios');
 const OpenAI = require('openai');
 const { Pool } = require('pg');
 
+// Tracking & scoring (from Vintera integration)
+let trackingRoutes, startScoreCron, registerNewProduct;
+try {
+  trackingRoutes = require('./trackingRoutes');
+  startScoreCron = require('./cron');
+  registerNewProduct = require('./publishPatch').registerNewProduct;
+  console.log('✓ Tracking modules loaded');
+} catch(e) {
+  console.log('Tracking modules not found — skipping');
+}
+
 // ── DATABASE ───────────────────────────────────────────────
 let db = null;
 async function initDB() {
@@ -716,6 +727,10 @@ async function runProductResearch() {
             const shopifyProduct = await publishToShopify(queueItem);
             queueItem.status = 'approved';
             queueItem.shopifyId = shopifyProduct.id;
+            // Register in scoring system
+            if (registerNewProduct && db) {
+              registerNewProduct(shopifyProduct.id, shopifyProduct.title, db).catch(()=>{});
+            }
             queueItem.approvedAt = new Date().toISOString();
             store.products.push(queueItem);
             store.stats.totalApproved++;
@@ -1003,6 +1018,10 @@ app.post('/api/approve/:id', async (req, res) => {
     const shopifyProduct = await publishToShopify(item);
     item.status = 'approved';
     item.shopifyId = shopifyProduct.id;
+    // Register in scoring system
+    if (registerNewProduct && db) {
+      registerNewProduct(shopifyProduct.id, shopifyProduct.title, db).catch(e => console.error('Score register failed:', e.message));
+    }
     item.approvedAt = new Date().toISOString();
 
     store.products.push(item);
@@ -1138,6 +1157,15 @@ cron.schedule('0 * * * *', () => {
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, async () => {
   await initDB();
+  // Mount tracking routes if available
+  if (trackingRoutes && db) {
+    app.use('/track', trackingRoutes(db));
+    console.log('✓ Tracking routes mounted at /track');
+  }
+  if (startScoreCron && db) {
+    startScoreCron(db);
+    console.log('✓ Score cron started');
+  }
   console.log(`Mercury Backend running on port ${PORT}`);
   console.log('Shopify:', process.env.SHOPIFY_DOMAIN || 'NOT SET');
   console.log('OpenAI:', process.env.OPENAI_API_KEY ? 'SET' : 'NOT SET');
