@@ -755,6 +755,38 @@ async function syncShopifyPerformance() {
 
 // ── API ROUTES ─────────────────────────────────────────────
 
+// ── SHOPIFY OAUTH ─────────────────────────────────────────
+app.get('/api/auth', (req, res) => {
+  const apiKey = process.env.SHOPIFY_API_KEY;
+  const scopes = 'read_products,write_products,read_orders,write_orders,read_inventory,write_inventory';
+  const redirectUri = `https://mercury-production-ace6.up.railway.app/api/auth/callback`;
+  const shop = req.query.shop || process.env.SHOPIFY_DOMAIN;
+  const authUrl = `https://${shop}/admin/oauth/authorize?client_id=${apiKey}&scope=${scopes}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+  res.redirect(authUrl);
+});
+
+app.get('/api/auth/callback', async (req, res) => {
+  const { code, shop } = req.query;
+  const apiKey = process.env.SHOPIFY_API_KEY;
+  const apiSecret = process.env.SHOPIFY_API_SECRET;
+  try {
+    const tokenRes = await axios.post(`https://${shop}/admin/oauth/access_token`, {
+      client_id: apiKey,
+      client_secret: apiSecret,
+      code
+    });
+    const accessToken = tokenRes.data.access_token;
+    console.log(`✓ OAuth complete for ${shop}. Token: ${accessToken.slice(0,10)}...`);
+    console.log('Add to Railway variables: SHOPIFY_TOKEN=' + accessToken);
+    // Store temporarily
+    process.env.SHOP_TOKEN = accessToken;
+    process.env.SHOPIFY_TOKEN = accessToken;
+    res.send(`<h2>✓ Connected!</h2><p>Token acquired for ${shop}</p><p>Add this to Railway Variables as SHOP_TOKEN:</p><code style="background:#f0f0f0;padding:10px;display:block;margin:10px 0;word-break:break-all">${accessToken}</code><p>Then redeploy Railway.</p>`);
+  } catch(e) {
+    res.status(500).send('OAuth failed: ' + e.message);
+  }
+});
+
 // Status
 app.get('/api/status', (req, res) => {
   res.json({
