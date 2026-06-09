@@ -209,18 +209,14 @@ async function searchCJProducts(token, keyword, limit = 20) {
 }
 
 function scoreCJProduct(product, index) {
-  let score = 0;
+  let score = 50; // Base score — CJ products are pre-vetted
   const price = parseFloat(product.sellPrice) || 10;
-  if (price >= 2 && price <= 80) score += 20;
-  else score += 8;
+  if (price >= 1 && price <= 100) score += 15;
   const orders = parseInt(product.orderCount) || 0;
-  score += Math.min(25, orders / 100);
-  const imgs = product.productImageSet?.length || 0;
-  score += Math.min(15, imgs * 3);
-  const ship = parseInt(product.shippingTime) || 20;
-  score += Math.max(0, 15 - ship);
-  if (product.variants?.length > 1) score += 10;
-  score += Math.max(0, 15 - index);
+  score += Math.min(20, orders / 50);
+  const imgs = (product.productImageSet || []).length;
+  score += Math.min(10, imgs * 2);
+  score += Math.max(0, 10 - index);
   return Math.min(100, Math.round(score));
 }
 
@@ -439,14 +435,9 @@ async function runProductResearch() {
           await delay(2000); // 2s between CJ requests to avoid rate limits
           const products = await searchCJProducts(cjToken, keyword, 10);
           store.stats.totalScanned += products.length;
-          if (products.length > 0) {
-            console.log('CJ sample product keys:', Object.keys(products[0]).join(', '));
-            console.log('CJ sample:', JSON.stringify({name:products[0].nameEn||products[0].name, price:products[0].sellPrice, orders:products[0].orderCount, imgs:products[0].productImageSet?.length}));
-          }
           products.forEach((p, i) => {
             const score = scoreCJProduct(p, i);
-            if (i < 2) console.log(`CJ score for "${p.nameEn||p.name}": ${score}`);
-            if (score >= 20) { // lowered threshold
+            if (score >= 20) {
               candidates.push({
                 ...p,
                 score,
@@ -474,7 +465,7 @@ async function runProductResearch() {
 
     // Sort by score, take top 5
     candidates.sort((a, b) => b.score - a.score);
-    const top = candidates.slice(0, 5);
+    const top = candidates.slice(0, 10);
 
     console.log(`Found ${candidates.length} candidates, processing top ${top.length}`);
 
@@ -495,19 +486,27 @@ async function runProductResearch() {
 
       try {
         // Get full product details + images
-        // Get images from product data (avoid extra API call)
+        // Get images — handle both AliExpress and CJ formats
+        const fixUrl = u => u ? (u.startsWith('//') ? 'https:' + u : u) : null;
         const images = [];
-        const imgBase = product.image || product.imageUrl || '';
-        if (imgBase) {
-          // Fix protocol-relative URLs
-          const fixUrl = u => u.startsWith('//') ? 'https:' + u : u;
-          images.push(fixUrl(imgBase));
+        const isCJProduct = product.source === 'cj';
+
+        if (isCJProduct) {
+          // CJ images are in productImageSet array
+          const cjImgs = product.productImageSet || [];
+          cjImgs.slice(0,5).forEach(img => { if(img) images.push(img); });
+        } else {
+          // AliExpress images
+          const imgBase = fixUrl(product.image || product.imageUrl || '');
+          if (imgBase) images.push(imgBase);
+          try {
+            const detail = await getAliExpressProductDetail(product.itemId||product.productId);
+            if (detail?.imageUrl) {
+              const dImg = fixUrl(detail.imageUrl);
+              if (dImg && !images.includes(dImg)) images.push(dImg);
+            }
+          } catch(e) {}
         }
-        // Try to get more images from detail (non-blocking)
-        try {
-          const detail = await getAliExpressProductDetail(product.itemId||product.productId);
-          if (detail?.imageUrl) images.push(detail.imageUrl.startsWith('//') ? 'https:'+detail.imageUrl : detail.imageUrl);
-        } catch(e) {}
 
         const costUsd = Math.max(2, parseFloat(product.sku?.def?.promotionPrice || product.sku?.def?.price || product.price?.minPrice || product.salePrice || 5));
         const rawSek = Math.round(costUsd * 5 * 9.5); // 5x markup, USD to SEK
