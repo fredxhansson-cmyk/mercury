@@ -258,8 +258,9 @@ function isProductBlocked(product) {
 }
 
 // Auto-publish threshold
-const AUTO_PUBLISH_SCORE = 60; // Products scoring 80+ go live automatically
+const AUTO_PUBLISH_SCORE = 60; // Products scoring 60+ go live automatically
 const MIN_SCORE = 60;          // Products below 60 are rejected
+const MAX_SHIPPING_DAYS = 14;  // Max shipping days to Sweden — longer is filtered out
 
 // ── ALIEXPRESS DATAHUB API (via RapidAPI) ─────────────────
 let aliExpressDisabled = false; // Auto-disable if quota exceeded
@@ -395,12 +396,26 @@ async function publishToShopify(product) {
       status: 'active',
       variants: [{
         price: product.sellPrice.toString(),
-        sku: `VIN-${product.cjPid}`,
+        sku: `VIN-${product.aliId || product.cjPid || 'AUTO'}`,
         inventory_management: 'shopify',
         inventory_quantity: product.stock || 50,
         weight: product.weight || 0.3,
         weight_unit: 'kg'
       }],
+      metafields: [
+        {
+          namespace: 'custom',
+          key: 'shipping_days',
+          value: String(product.shippingDays || 10),
+          type: 'number_integer'
+        },
+        {
+          namespace: 'custom',
+          key: 'source',
+          value: product.source || 'cj',
+          type: 'single_line_text_field'
+        }
+      ],
       images: product.images?.slice(0, 5).map(url => ({ src: url }))
     }
   };
@@ -595,6 +610,12 @@ async function runProductResearch() {
           store.stats.totalScanned += products.length;
           products.forEach((p, i) => {
             const score = scoreCJProduct(p, i);
+            // Filter out slow shipping
+            const shipDays = parseInt(p.shippingTime) || 99;
+            if (shipDays > MAX_SHIPPING_DAYS) {
+              console.log(`⏱ Skipped slow shipping: ${p.nameEn||p.name} (${shipDays} days)`);
+              continue;
+            }
             if (score >= 20) {
               candidates.push({
                 ...p,
