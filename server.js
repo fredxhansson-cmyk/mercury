@@ -247,7 +247,7 @@ function isProductBlocked(product) {
 }
 
 // Auto-publish threshold
-const AUTO_PUBLISH_SCORE = 80; // Products scoring 80+ go live automatically
+const AUTO_PUBLISH_SCORE = 60; // Products scoring 80+ go live automatically
 const MIN_SCORE = 60;          // Products below 60 are rejected
 
 // ── ALIEXPRESS DATAHUB API (via RapidAPI) ─────────────────
@@ -404,41 +404,40 @@ async function publishToShopify(product) {
 
 // ── OPENAI CONTENT GENERATION ──────────────────────────────
 async function generateProductContent(rawProduct) {
-  const prompt = `Du är en premium copywriter för Vintera, en modern kurerad livsstilsbutik som säljer i Sverige. Förvandla denna produkt till polerad, konverteringsfokuserad copy på SVENSKA.
+  const prompt = `Du är en erfaren svensk copywriter för Vintera — en modern, kurerad livsstilsbutik. Du skriver som en riktig svensk människa, inte som en översättning från engelska. Naturlig, varm och trovärdig svenska.
 
 Produkt: ${rawProduct.nameEn || rawProduct.name}
 Kategori: ${rawProduct.categoryName || 'Allmänt'}
 Beskrivning: ${rawProduct.description || 'Inte angiven'}
-Kostpris: ${rawProduct.sellPrice || '?'} USD
 
-Skriv EXAKT i detta format:
+Skriv EXAKT i detta format (all text på svenska):
 
-TITLE: [Rent varumärkestitel, max 8 ord, inget leverantörsspråk, på svenska]
+TITLE: [Kort, naturlig svensk titel — max 7 ord. Skriv som en svensk skulle säga det, t.ex. "Trådlös laddare för bilen" inte "Wireless Car Charger Pro Max"]
 
-META: [SEO-metabeskrivning, max 155 tecken, fördel-först, på svenska]
+META: [SEO-beskrivning, max 155 tecken. Naturlig svenska, fördel-först. Inga utropstecken.]
 
-DESCRIPTION: [2 korta stycken, premium livsstilston, ingen överdrift, på svenska]
+DESCRIPTION: [2 korta stycken. Skriv avslappnat och trovärdigt — som om du tipsar en vän. Ingen reklamsvenska, inga överdrifter som "revolutionerande" eller "banbrytande". Fokusera på hur produkten faktiskt hjälper i vardagen.]
 
 BENEFITS:
-• [Fördel med fetstilt ledord — specifik och användbar, på svenska]
-• [Fördel med fetstilt ledord — specifik och användbar, på svenska]
-• [Fördel med fetstilt ledord — specifik och användbar, på svenska]
+• [Konkret fördel — kort och tydlig, max 12 ord]
+• [Konkret fördel — kort och tydlig, max 12 ord]
+• [Konkret fördel — kort och tydlig, max 12 ord]
 
 FAQ:
-Q: [Vanligaste frågan om produkten, på svenska]
-A: [Säkert, hjälpsamt svar, på svenska]
+Q: [Den vanligaste frågan en svensk kund skulle ställa]
+A: [Kort, ärligt svar. Inga löften du inte kan hålla.]
 
-AD_HOOK: [TikTok/Meta-hook, max 10 ord, nyfikenhet eller problem-lösning, på svenska]
+AD_HOOK: [En rad för Instagram/TikTok — max 10 ord. Ska kännas äkta, inte som reklam. T.ex. "Därför har alla börjat använda den här" eller "Äntligen slipper du det här problemet"]
 
-TAGS: [5 relevanta taggar, kommaseparerade, gemener, på svenska]
+TAGS: [5 taggar, gemener, relevanta, på svenska]
 
-Håll allt rent, modernt och trovärdigt. Inget "dropshipping", inga leverantörsnamn, inga falska påståenden.`;
+Viktigt: Inga engelska ord om det finns ett bra svenskt alternativ. Inget "dropshipping", inga leverantörsnamn, inga påhittade specifikationer.`;
 
   const res = await openai.chat.completions.create({
     model: 'gpt-4o',
-    max_tokens: 800,
+    max_tokens: 900,
     messages: [
-      { role: 'system', content: 'Du är en premium e-handelscopywriter för svenska marknaden. Returnera endast det formaterade innehållet som efterfrågas, inget annat. All text ska vara på svenska.' },
+      { role: 'system', content: 'Du är en erfaren svensk copywriter. Du skriver naturlig, modern svenska — inte översatt engelska. Returnera endast det formaterade innehållet, inget annat.' },
       { role: 'user', content: prompt }
     ]
   });
