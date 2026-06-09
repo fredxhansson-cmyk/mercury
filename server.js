@@ -19,6 +19,10 @@ try {
 
 // ── DATABASE ───────────────────────────────────────────────
 let db = null;
+// Env aliases for collectionAssign compatibility
+process.env.SHOPIFY_SHOP_DOMAIN = process.env.SHOPIFY_SHOP_DOMAIN || process.env.SHOPIFY_DOMAIN;
+process.env.SHOPIFY_ACCESS_TOKEN = process.env.SHOPIFY_ACCESS_TOKEN || process.env.SHOP_TOKEN || process.env.SHOPIFY_TOKEN;
+
 async function initDB() {
   if (!process.env.DATABASE_URL) {
     console.log('No DATABASE_URL — using in-memory storage');
@@ -756,9 +760,11 @@ async function runProductResearch() {
             store.products.push(queueItem);
             store.stats.totalApproved++;
             await dbSave('products', queueItem);
-            if (queueItem.shopifyCollection && shopifyProduct.id) {
-              addProductToCollection(shopifyProduct.id, queueItem.shopifyCollection).catch(()=>{});
-            }
+            // Add to collections
+            try {
+              const { assignCollections } = require('./collectionAssign');
+              assignCollections(shopifyProduct.id, queueItem.title, queueItem.tags, db).catch(()=>{});
+            } catch(e) {}
             console.log(`✓ Auto-published: ${content.title} → Shopify ID ${shopifyProduct.id}`);
             // Trigger integrations
             triggerMakeWebhook('product_approved', { title: queueItem.title, price: queueItem.sellPrice, shopifyId: shopifyProduct.id, images: queueItem.images?.slice(0,1) });
@@ -1051,10 +1057,11 @@ app.post('/api/approve/:id', async (req, res) => {
     await dbSave('products', item);
     await dbDelete('queue', item.id);
 
-    // Add to Shopify collection
-    if (item.shopifyCollection && shopifyProduct.id) {
-      addProductToCollection(shopifyProduct.id, item.shopifyCollection).catch(e => console.error('Collection error:', e.message));
-    }
+    // Add to Shopify collections via collectionAssign
+    try {
+      const { assignCollections } = require('./collectionAssign');
+      assignCollections(shopifyProduct.id, item.title, item.tags, db).catch(e => console.error('Collection assign error:', e.message));
+    } catch(e) { console.log('collectionAssign not loaded'); }
 
     // Trigger all integrations in background (non-blocking)
     Promise.all([
