@@ -197,6 +197,10 @@ async function searchCJProducts(token, keyword, limit = 20) {
     });
     const list = res.data?.data?.list || [];
     console.log(`CJ "${keyword}": ${list.length} results (msg: ${res.data?.message})`);
+    if (list.length > 0) {
+      const sample = list[0];
+      console.log(`CJ image fields: productImage=${!!sample.productImage}, productImageSet=${sample.productImageSet?.length||0}, imageUrl=${!!sample.imageUrl}`);
+    }
     return list;
   } catch(e) {
     if (e.response?.status === 429) {
