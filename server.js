@@ -103,10 +103,12 @@ function snapPrice(rawSek) {
 }
 
 // ── ALIEXPRESS DATAHUB API (via RapidAPI) ─────────────────
+let aliExpressDisabled = false; // Auto-disable if quota exceeded
+
 async function searchAliExpressProducts(keyword, limit = 20) {
   const rapidApiKey = process.env.RAPIDAPI_KEY;
-  if (!rapidApiKey) {
-    console.error('No RAPIDAPI_KEY set');
+  if (!rapidApiKey || aliExpressDisabled) {
+    if (aliExpressDisabled) console.log('AliExpress disabled — monthly quota exceeded');
     return [];
   }
   try {
@@ -123,7 +125,12 @@ async function searchAliExpressProducts(keyword, limit = 20) {
     });
     return res.data?.result?.resultList || [];
   } catch(e) {
-    console.error('AliExpress search failed:', e.message);
+    if (e.response?.status === 429 || e.message?.includes('MONTHLY') || e.message?.includes('quota')) {
+      aliExpressDisabled = true;
+      console.log('AliExpress monthly quota exceeded — disabling for this session. Upgrade at rapidapi.com');
+    } else {
+      console.error('AliExpress search failed:', e.message);
+    }
     return [];
   }
 }
@@ -391,6 +398,7 @@ async function runProductResearch() {
 
   try {
     const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
+  const delay = ms => new Promise(r => setTimeout(r, ms));
     const keywords = shuffle(TREND_KEYWORDS).slice(0, 3);
     console.log('Researching keywords:', keywords);
 
@@ -422,6 +430,7 @@ async function runProductResearch() {
       if (cjToken) {
         const cjKeywords = shuffle(TREND_KEYWORDS).slice(0, 3);
         for (const keyword of cjKeywords) {
+          await delay(2000); // 2s between CJ requests to avoid rate limits
           const products = await searchCJProducts(cjToken, keyword, 10);
           store.stats.totalScanned += products.length;
           products.forEach((p, i) => {
