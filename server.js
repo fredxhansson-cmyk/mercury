@@ -439,9 +439,14 @@ async function runProductResearch() {
           await delay(2000); // 2s between CJ requests to avoid rate limits
           const products = await searchCJProducts(cjToken, keyword, 10);
           store.stats.totalScanned += products.length;
+          if (products.length > 0) {
+            console.log('CJ sample product keys:', Object.keys(products[0]).join(', '));
+            console.log('CJ sample:', JSON.stringify({name:products[0].nameEn||products[0].name, price:products[0].sellPrice, orders:products[0].orderCount, imgs:products[0].productImageSet?.length}));
+          }
           products.forEach((p, i) => {
             const score = scoreCJProduct(p, i);
-            if (score >= 40) {
+            if (i < 2) console.log(`CJ score for "${p.nameEn||p.name}": ${score}`);
+            if (score >= 20) { // lowered threshold
               candidates.push({
                 ...p,
                 score,
