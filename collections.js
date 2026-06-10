@@ -1,81 +1,67 @@
 /**
  * MELONI — KOLLEKTIONSKONFIGURATION
- * 
- * De 7 aktiva kollektionerna. Uppdatera shopify_id när
- * du skapat kollektionerna i Shopify-admin.
- * 
- * Så här hittar du shopify_id:
- * Shopify Admin → Products → Collections → klicka kollektionen
- * → URL:en visar: /collections/123456789 → det är ditt ID
+ * Fitness / Outdoor / Health niche
  */
 
 const COLLECTIONS = [
   {
-    name:       'Fitness & Hälsa',
-    handle:     'fitness-halsa',
-    shopify_id: null,           // ← fyll i efter skapandet i Shopify
-    emoji:      '💪',
-    tags:       ['fitness', 'halsa', 'traning', 'sport', 'wellness'],
-    cj_keywords: ['fitness', 'gym', 'yoga', 'sport', 'health', 'exercise'],
+    name:        'Träning & Fitness',
+    handle:      'traning-fitness',
+    shopify_id:  null,
+    emoji:       '💪',
+    tags:        ['träning','fitness','gym','yoga','crossfit','styrka','kondition'],
+    cj_keywords: ['fitness','gym','workout','yoga','resistance','training','exercise','crossfit'],
   },
   {
-    name:       'Hem & Inredning',
-    handle:     'hem-inredning',
-    shopify_id: null,
-    emoji:      '🏠',
-    tags:       ['hem', 'inredning', 'kök', 'badrum', 'förvaring'],
-    cj_keywords: ['home decor', 'kitchen', 'storage', 'bedroom', 'living room'],
+    name:        'Friluftsliv & Outdoor',
+    handle:      'friluftsliv-outdoor',
+    shopify_id:  null,
+    emoji:       '🏔️',
+    tags:        ['outdoor','vandring','camping','cykling','trail','klättring','löpning'],
+    cj_keywords: ['hiking','outdoor','camping','cycling','trail','trekking','climbing','running'],
   },
   {
-    name:       'Tech & Gadgets',
-    handle:     'tech-gadgets',
-    shopify_id: null,
-    emoji:      '🔌',
-    tags:       ['tech', 'gadgets', 'elektronik', 'tillbehör'],
-    cj_keywords: ['gadget', 'electronic', 'USB', 'wireless', 'smart', 'cable'],
+    name:        'Återhämtning & Hälsa',
+    handle:      'aterhamtning-halsa',
+    shopify_id:  null,
+    emoji:       '🧘',
+    tags:        ['återhämtning','massage','kompression','hållning','stretching','sömn'],
+    cj_keywords: ['recovery','massage','brace','compression','posture','stretching','sleep','foam roller'],
   },
   {
-    name:       'Skönhet & Välmående',
-    handle:     'skonhet-valmande',
-    shopify_id: null,
-    emoji:      '✨',
-    tags:       ['skönhet', 'välmående', 'hudvård', 'massage'],
-    cj_keywords: ['beauty', 'skin care', 'massage', 'hair', 'cosmetic', 'wellness'],
+    name:        'Smart Teknik',
+    handle:      'smart-teknik',
+    shopify_id:  null,
+    emoji:       '⌚',
+    tags:        ['smartwatch','gps','tracker','hörlurar','kamera','puls'],
+    cj_keywords: ['smartwatch','gps watch','tracker','earbuds','headphones','action camera','heart rate'],
   },
   {
-    name:       'Mode & Accessoarer',
-    handle:     'mode-accessoarer',
-    shopify_id: null,
-    emoji:      '👜',
-    tags:       ['mode', 'accessoarer', 'väskor', 'smycken', 'kläder'],
-    cj_keywords: ['fashion', 'bag', 'jewelry', 'accessories', 'watch', 'bracelet'],
+    name:        'Kost & Vätska',
+    handle:      'kost-vatska',
+    shopify_id:  null,
+    emoji:       '💧',
+    tags:        ['vattenflaska','protein','kosttillskott','shaker','hydrering','meal prep'],
+    cj_keywords: ['water bottle','protein','supplement','shaker','hydration','electrolyte','meal prep'],
   },
   {
-    name:       'Resor & Outdoor',
-    handle:     'resor-outdoor',
-    shopify_id: null,
-    emoji:      '🎒',
-    tags:       ['resor', 'outdoor', 'camping', 'vandring', 'resväska'],
-    cj_keywords: ['travel', 'outdoor', 'camping', 'hiking', 'backpack', 'luggage'],
+    name:        'Utrustning & Tillbehör',
+    handle:      'utrustning-tillbehor',
+    shopify_id:  null,
+    emoji:       '🎒',
+    tags:        ['väska','ryggsäck','handskar','bälte','matta','rep','utrustning'],
+    cj_keywords: ['gym bag','backpack','gloves','belt','mat','rope','equipment','accessories'],
   },
   {
-    name:       'Livsstil',
-    handle:     'livsstil',
-    shopify_id: null,
-    emoji:      '🌿',
-    tags:       ['livsstil', 'hobby', 'fritid', 'presenter', 'övrigt'],
-    cj_keywords: ['lifestyle', 'gift', 'hobby', 'leisure', 'organizer', 'daily'],
+    name:        'Livsstil',
+    handle:      'livsstil',
+    shopify_id:  681614344529,
+    emoji:       '🌿',
+    tags:        ['livsstil','aktiv','vardagsmotion','hälsosam'],
+    cj_keywords: ['lifestyle','active','daily','wellness','healthy'],
   },
 ];
 
-/**
- * Matcha en produkt mot rätt kollektion baserat på titel + taggar.
- * Returnerar array av matching collection handles.
- * 
- * @param {string} title       Produkttitel
- * @param {string[]} tags      Produkttaggar från Mercury/AI
- * @returns {string[]}         Matchande collection handles
- */
 function matchCollections(title, tags = []) {
   const titleLower = title.toLowerCase();
   const tagsLower  = tags.map(t => t.toLowerCase());
@@ -89,16 +75,10 @@ function matchCollections(title, tags = []) {
     if (hit) matches.push(col.handle);
   }
 
-  // Fallback: om inget matchar → Livsstil
-  if (matches.length === 0) matches.push('livsstil');
-
+  if (matches.length === 0) matches.push('traning-fitness');
   return matches;
 }
 
-/**
- * Hämta Shopify collection ID från handle.
- * Returnerar null om inte konfigurerat än.
- */
 function getCollectionId(handle) {
   const col = COLLECTIONS.find(c => c.handle === handle);
   return col ? col.shopify_id : null;

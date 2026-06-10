@@ -118,8 +118,67 @@ function snapPrice(rawSek) {
 }
 
 
-// ── CATEGORY MAPPING ──────────────────────────────────────
+// ── CATEGORY MAPPING (Fitness/Outdoor/Health niche) ──────────
 const CATEGORY_MAP = {
+  // Träning & Fitness
+  'gym': { sv: 'Träning & Fitness', tag: 'gym', shopify: 'Träning & Fitness', gender: 'unisex' },
+  'fitness': { sv: 'Träning & Fitness', tag: 'fitness', shopify: 'Träning & Fitness', gender: 'unisex' },
+  'workout': { sv: 'Träning & Fitness', tag: 'träning', shopify: 'Träning & Fitness', gender: 'unisex' },
+  'training': { sv: 'Träning & Fitness', tag: 'träning', shopify: 'Träning & Fitness', gender: 'unisex' },
+  'resistance': { sv: 'Träning & Fitness', tag: 'styrketräning', shopify: 'Träning & Fitness', gender: 'unisex' },
+  'yoga': { sv: 'Träning & Fitness', tag: 'yoga', shopify: 'Träning & Fitness', gender: 'dam' },
+  'crossfit': { sv: 'Träning & Fitness', tag: 'crossfit', shopify: 'Träning & Fitness', gender: 'unisex' },
+  'weightlifting': { sv: 'Träning & Fitness', tag: 'styrketräning', shopify: 'Träning & Fitness', gender: 'herr' },
+  'cardio': { sv: 'Träning & Fitness', tag: 'kondition', shopify: 'Träning & Fitness', gender: 'unisex' },
+
+  // Friluftsliv & Outdoor
+  'hiking': { sv: 'Friluftsliv & Outdoor', tag: 'vandring', shopify: 'Friluftsliv & Outdoor', gender: 'unisex' },
+  'outdoor': { sv: 'Friluftsliv & Outdoor', tag: 'outdoor', shopify: 'Friluftsliv & Outdoor', gender: 'unisex' },
+  'camping': { sv: 'Friluftsliv & Outdoor', tag: 'camping', shopify: 'Friluftsliv & Outdoor', gender: 'unisex' },
+  'trekking': { sv: 'Friluftsliv & Outdoor', tag: 'vandring', shopify: 'Friluftsliv & Outdoor', gender: 'unisex' },
+  'climbing': { sv: 'Friluftsliv & Outdoor', tag: 'klättring', shopify: 'Friluftsliv & Outdoor', gender: 'unisex' },
+  'cycling': { sv: 'Friluftsliv & Outdoor', tag: 'cykling', shopify: 'Friluftsliv & Outdoor', gender: 'unisex' },
+  'trail': { sv: 'Friluftsliv & Outdoor', tag: 'trail', shopify: 'Friluftsliv & Outdoor', gender: 'unisex' },
+  'running': { sv: 'Friluftsliv & Outdoor', tag: 'löpning', shopify: 'Friluftsliv & Outdoor', gender: 'unisex' },
+
+  // Återhämtning & Hälsa
+  'recovery': { sv: 'Återhämtning & Hälsa', tag: 'återhämtning', shopify: 'Återhämtning & Hälsa', gender: 'unisex' },
+  'massage': { sv: 'Återhämtning & Hälsa', tag: 'massage', shopify: 'Återhämtning & Hälsa', gender: 'unisex' },
+  'brace': { sv: 'Återhämtning & Hälsa', tag: 'skydd', shopify: 'Återhämtning & Hälsa', gender: 'unisex' },
+  'compression': { sv: 'Återhämtning & Hälsa', tag: 'kompression', shopify: 'Återhämtning & Hälsa', gender: 'unisex' },
+  'posture': { sv: 'Återhämtning & Hälsa', tag: 'hållning', shopify: 'Återhämtning & Hälsa', gender: 'unisex' },
+  'stretching': { sv: 'Återhämtning & Hälsa', tag: 'stretching', shopify: 'Återhämtning & Hälsa', gender: 'unisex' },
+  'sleep': { sv: 'Återhämtning & Hälsa', tag: 'sömn', shopify: 'Återhämtning & Hälsa', gender: 'unisex' },
+  'acupressure': { sv: 'Återhämtning & Hälsa', tag: 'återhämtning', shopify: 'Återhämtning & Hälsa', gender: 'unisex' },
+  'foam roller': { sv: 'Återhämtning & Hälsa', tag: 'foam roller', shopify: 'Återhämtning & Hälsa', gender: 'unisex' },
+
+  // Smart Teknik
+  'smartwatch': { sv: 'Smart Teknik', tag: 'smartwatch', shopify: 'Smart Teknik', gender: 'unisex' },
+  'gps watch': { sv: 'Smart Teknik', tag: 'gps', shopify: 'Smart Teknik', gender: 'unisex' },
+  'tracker': { sv: 'Smart Teknik', tag: 'tracker', shopify: 'Smart Teknik', gender: 'unisex' },
+  'earbuds': { sv: 'Smart Teknik', tag: 'hörlurar', shopify: 'Smart Teknik', gender: 'unisex' },
+  'headphones': { sv: 'Smart Teknik', tag: 'hörlurar', shopify: 'Smart Teknik', gender: 'unisex' },
+  'action camera': { sv: 'Smart Teknik', tag: 'kamera', shopify: 'Smart Teknik', gender: 'unisex' },
+  'heart rate': { sv: 'Smart Teknik', tag: 'puls', shopify: 'Smart Teknik', gender: 'unisex' },
+  'cycling computer': { sv: 'Smart Teknik', tag: 'cykling', shopify: 'Smart Teknik', gender: 'unisex' },
+
+  // Kost & Vätska
+  'water bottle': { sv: 'Kost & Vätska', tag: 'vattenflaska', shopify: 'Kost & Vätska', gender: 'unisex' },
+  'protein': { sv: 'Kost & Vätska', tag: 'protein', shopify: 'Kost & Vätska', gender: 'unisex' },
+  'supplement': { sv: 'Kost & Vätska', tag: 'kosttillskott', shopify: 'Kost & Vätska', gender: 'unisex' },
+  'shaker': { sv: 'Kost & Vätska', tag: 'shaker', shopify: 'Kost & Vätska', gender: 'unisex' },
+  'hydration': { sv: 'Kost & Vätska', tag: 'hydrering', shopify: 'Kost & Vätska', gender: 'unisex' },
+  'electrolyte': { sv: 'Kost & Vätska', tag: 'elektrolyter', shopify: 'Kost & Vätska', gender: 'unisex' },
+  'meal prep': { sv: 'Kost & Vätska', tag: 'meal prep', shopify: 'Kost & Vätska', gender: 'unisex' },
+
+  // Utrustning & Tillbehör
+  'gym bag': { sv: 'Utrustning & Tillbehör', tag: 'väska', shopify: 'Utrustning & Tillbehör', gender: 'unisex' },
+  'backpack': { sv: 'Utrustning & Tillbehör', tag: 'ryggsäck', shopify: 'Utrustning & Tillbehör', gender: 'unisex' },
+  'gloves': { sv: 'Utrustning & Tillbehör', tag: 'handskar', shopify: 'Utrustning & Tillbehör', gender: 'unisex' },
+  'belt': { sv: 'Utrustning & Tillbehör', tag: 'bälte', shopify: 'Utrustning & Tillbehör', gender: 'unisex' },
+  'mat': { sv: 'Utrustning & Tillbehör', tag: 'matta', shopify: 'Utrustning & Tillbehör', gender: 'unisex' },
+  'rope': { sv: 'Utrustning & Tillbehör', tag: 'rep', shopify: 'Utrustning & Tillbehör', gender: 'unisex' },
+
   // Sports & Fitness
   'sports': { sv: 'Fitness & Hälsa', tag: 'fitness', shopify: 'Fitness & Hälsa' },
   'fitness': { sv: 'Fitness & Hälsa', tag: 'fitness', shopify: 'Fitness & Hälsa' },
@@ -180,7 +239,7 @@ function mapCategory(rawCategory, productTitle) {
   for (const [key, val] of Object.entries(CATEGORY_MAP)) {
     if (text.includes(key)) return val;
   }
-  return { sv: 'Livsstil', tag: 'livsstil', shopify: 'Livsstil' };
+  return { sv: 'Träning & Fitness', tag: 'fitness', shopify: 'Träning & Fitness', gender: 'unisex' };
 }
 
 // Create Shopify collection if it doesn't exist
@@ -237,13 +296,40 @@ async function addProductToCollection(productId, collectionName) {
 // ── CONTENT FILTER ────────────────────────────────────────
 const BLOCKED_KEYWORDS = [
   // Adult/sexual
-  'sex','adult','erotic','porn','nude','lingerie','vibrat','dildo','condom','penis','vagina',
+  'sex','adult','erotic','porn','nude','vibrat','dildo','condom','penis','vagina',
   // Weapons
-  'gun','weapon','knife','sword','bullet','ammo','firearm','pistol','rifle','grenade',
-  // Drugs/alcohol
-  'drug','cannabis','marijuana','cocaine','alcohol','beer','wine','vodka','cigarette','tobacco','vape',
-  // Other
-  'gambling','casino','betting','fake','replica','counterfeit'
+  'gun','weapon','sword','bullet','ammo','firearm','pistol','rifle','grenade',
+  // Drugs/alcohol  
+  'drug','cannabis','marijuana','cocaine','whiskey','whisky','beer','wine','vodka',
+  'cigarette','tobacco','vape','e-cigarette',
+  // Gambling
+  'gambling','casino','betting',
+  // Fakes
+  'fake','replica','counterfeit',
+  // Car/auto parts (not relevant)
+  'speedometer','glovebox','car mat clip','windshield','dashboard clip',
+  // Home decor (not our niche)
+  'curtain','tablecloth','wall sticker','picture frame','vase','candle holder',
+  // Pet clothing
+  'pet dress','dog dress','cat costume',
+  // Beauty/makeup (not our niche unless recovery/health)
+  'lipstick','mascara','foundation','eyeshadow','nail polish','eyelash',
+  // Fashion accessories (not sport)
+  'high heel','stiletto','evening dress','wedding dress','tuxedo',
+];
+
+// Niche validation — product must relate to at least one of these
+const NICHE_KEYWORDS = [
+  'sport','fitness','gym','workout','training','exercise','running','hiking',
+  'cycling','yoga','outdoor','camping','recovery','health','wellness',
+  'compression','resistance','muscle','cardio','athletic','active',
+  'trail','trekking','climbing','swimming','rowing','crossfit',
+  'stretching','mobility','flexibility','strength','endurance',
+  'nutrition','hydration','protein','supplement','electrolyte',
+  'smartwatch','gps','heart rate','tracker','monitor','sensor',
+  'waterproof','windproof','thermal','breathable','lightweight',
+  'löpning','träning','friluftsliv','vandring','cykling','återhämtning',
+  'sport','fitness','gym','hälsa','wellness','aktiv',
 ];
 
 function isProductBlocked(product) {
@@ -252,12 +338,38 @@ function isProductBlocked(product) {
     product.categoryName, product.description
   ].join(' ').toLowerCase();
   
+  // Check blocked keywords
   for (const kw of BLOCKED_KEYWORDS) {
     if (text.includes(kw)) {
-      console.log(`⛔ Blocked product "${product.title||product.nameEn}" — contains: "${kw}"`);
+      console.log(`⛔ Blocked: "${product.title||product.nameEn}" — keyword: "${kw}"`);
       return true;
     }
   }
+
+  // Block car/auto parts
+  const catText = (product.categoryName || '').toLowerCase();
+  if (catText.includes('automobile') || catText.includes('car care') || 
+      catText.includes('vehicle') || catText.includes('motor')) {
+    console.log(`⛔ Blocked auto category: "${product.title||product.nameEn}"`);
+    return true;
+  }
+
+  // Block car brands
+  const carBrands = ['ford ','toyota ','honda ','bmw ','mercedes ','audi ','volkswagen '];
+  for (const brand of carBrands) {
+    if (text.includes(brand)) {
+      console.log(`⛔ Blocked car brand: "${product.title||product.nameEn}"`);
+      return true;
+    }
+  }
+
+  // NICHE CHECK — must match at least one fitness/outdoor/health keyword
+  const isNicheRelevant = NICHE_KEYWORDS.some(kw => text.includes(kw));
+  if (!isNicheRelevant) {
+    console.log(`⛔ Off-niche: "${product.title||product.nameEn}" — not fitness/outdoor/health`);
+    return true;
+  }
+
   return false;
 }
 
@@ -394,7 +506,7 @@ async function publishToShopify(product) {
     product: {
       title: product.title,
       body_html: product.descriptionHtml,
-      vendor: product.shopifyCollection || product.category || 'Meloni',
+      vendor: 'Meloni',
       product_type: product.category,
       tags: product.tags?.join(','),
       status: 'active',
@@ -467,7 +579,7 @@ Viktigt: Inga engelska ord om det finns ett bra svenskt alternativ. Inget "drops
     model: 'gpt-4o',
     max_tokens: 900,
     messages: [
-      { role: 'system', content: 'Du är en erfaren svensk copywriter. Du skriver naturlig, modern svenska — inte översatt engelska. Returnera endast det formaterade innehållet, inget annat.' },
+      { role: 'system', content: 'Du är en erfaren svensk copywriter specialiserad på aktiv livsstil, träning, friluftsliv och hälsa. Du skriver naturlig, modern svenska för en sportig målgrupp — inte översatt engelska. Returnera endast det formaterade innehållet, inget annat.' },
       { role: 'user', content: prompt }
     ]
   });
@@ -559,13 +671,29 @@ function scoreProduct(product, index) {
 
 // ── TREND KEYWORDS ─────────────────────────────────────────
 const TREND_KEYWORDS = [
-  'posture corrector', 'led desk lamp', 'portable blender',
-  'acupressure mat', 'cable organizer', 'pet hair remover',
-  'resistance bands', 'phone mount', 'massage gun',
-  'sleep mask', 'back stretcher', 'knee brace',
-  'air purifier mini', 'water bottle insulated', 'face massager',
-  'eye mask heated', 'back massager', 'laptop stand portable',
-  'ring light mini', 'fitness tracker band'
+  // Träning & Fitness
+  'resistance bands', 'massage gun', 'foam roller', 'pull up bar',
+  'jump rope', 'gym gloves', 'weightlifting belt', 'ab roller',
+  'fitness tracker', 'smartwatch sport', 'heart rate monitor',
+  'yoga mat', 'yoga block', 'workout leggings', 'sports bra high support',
+  'compression socks', 'gym bag', 'water bottle insulated',
+  'protein shaker', 'gym shoes men', 'running shoes women',
+  // Friluftsliv & Outdoor
+  'hiking boots', 'trekking poles', 'camping headlamp',
+  'sleeping bag', 'outdoor backpack', 'waterproof jacket',
+  'trail running shoes', 'cycling gloves', 'bike helmet',
+  'carabiner', 'camping stove', 'water filter outdoor',
+  // Återhämtning & Hälsa
+  'knee brace support', 'back stretcher', 'posture corrector',
+  'acupressure mat', 'ice pack recovery', 'compression sleeve',
+  'ankle support', 'elbow brace', 'muscle roller stick',
+  'sleep mask', 'eye mask heated', 'neck massager',
+  // Smart Teknik sport
+  'running headphones', 'sports earbuds wireless', 'gps watch',
+  'cycling computer', 'action camera', 'solar charger outdoor',
+  // Kost & Vätska  
+  'meal prep container', 'supplement organizer', 'blender bottle',
+  'electrolyte powder', 'energy gel', 'hydration vest',
 ];
 
 // ── MAIN RESEARCH PIPELINE ─────────────────────────────────
