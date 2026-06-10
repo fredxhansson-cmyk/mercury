@@ -1109,6 +1109,13 @@ async function runProductResearch() {
         });
         const content = parseGeneratedContent(rawContent);
 
+        // Reject low-score products
+if (product.score < MIN_SCORE) {
+  console.log(`⛔ Low score: "${product.title || product.nameEn}" (${product.score})`);
+  store.stats.totalRejected++;
+  continue;
+}
+
         const queueItem = {
           id: `q_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
           aliId: String(product.itemId||product.productId||Math.random()),
