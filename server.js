@@ -374,7 +374,7 @@ function isProductBlocked(product) {
 }
 
 // Auto-publish threshold
-const AUTO_PUBLISH_SCORE = 60; // Products scoring 60+ go live automatically
+const AUTO_PUBLISH_SCORE = 999; // Disabled — all products go to approval queue
 const MIN_SCORE = 60;          // Products below 60 are rejected
 const MAX_SHIPPING_DAYS = 21;  // Max shipping days — only used when data is available
 
@@ -772,7 +772,7 @@ async function runProductResearch() {
 
     // Sort by score, take top 5
     candidates.sort((a, b) => b.score - a.score);
-    const top = candidates.slice(0, 10);
+    const top = candidates.slice(0, 20);
 
     console.log(`Found ${candidates.length} candidates, processing top ${top.length}`);
 
