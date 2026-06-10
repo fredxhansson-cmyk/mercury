@@ -1320,6 +1320,117 @@ app.get('/api/dashboard', (req, res) => {
   });
 });
 
+
+// ── SKAPA ALLA KOLLEKTIONER (engångskörning) ──────────────
+app.get('/api/create-collections', async (req, res) => {
+  const domain = process.env.SHOPIFY_DOMAIN;
+  const token  = process.env.SHOP_TOKEN || process.env.SHOPIFY_TOKEN;
+  if (!domain || !token) return res.status(500).json({ error: 'Shopify not configured' });
+
+  const COLLECTIONS = [
+    // Toppnivå
+    { title: 'Nyheter',      handle: 'nyheter',      sort: 'created-descending' },
+    { title: 'Bästsäljare',  handle: 'bestsellers',  sort: 'best-selling' },
+    { title: 'Rea',          handle: 'rea',           sort: 'price-descending' },
+    // Kön
+    { title: 'Herr', handle: 'herr' },
+    { title: 'Dam',  handle: 'dam' },
+    { title: 'Barn', handle: 'barn' },
+    // Herr kläder
+    { title: 'Herr T-shirts',                handle: 'herr-t-shirts' },
+    { title: 'Herr Linnen',                  handle: 'herr-linnen' },
+    { title: 'Herr Hoodies och Sweatshirts', handle: 'herr-hoodies' },
+    { title: 'Herr Funktionskläder',         handle: 'herr-funktionskl-der' },
+    { title: 'Herr Kompressionskläder',      handle: 'herr-kompressionskl-der' },
+    { title: 'Herr Shorts',                  handle: 'herr-shorts' },
+    { title: 'Herr Byxor och Joggers',       handle: 'herr-byxor' },
+    { title: 'Herr Jackor',                  handle: 'herr-jackor' },
+    { title: 'Herr Underställ',              handle: 'herr-underst-ll' },
+    { title: 'Herr Strumpor och Underkläder',handle: 'herr-strumpor' },
+    // Herr skor
+    { title: 'Herr Löparskor',       handle: 'herr-loparskor' },
+    { title: 'Herr Träningsskor',    handle: 'herr-traningsskor' },
+    { title: 'Herr Trailskor',       handle: 'herr-trailskor' },
+    { title: 'Herr Vandringskängor', handle: 'herr-vandring' },
+    { title: 'Herr Sandaler',        handle: 'herr-sandaler' },
+    // Dam kläder
+    { title: 'Dam T-shirts och Linnen',     handle: 'dam-t-shirts' },
+    { title: 'Dam Hoodies och Sweatshirts', handle: 'dam-hoodies' },
+    { title: 'Dam Funktionskläder',         handle: 'dam-funktionskl-der' },
+    { title: 'Dam Kompressionskläder',      handle: 'dam-kompressionskl-der' },
+    { title: 'Dam Shorts och Tights',       handle: 'dam-shorts' },
+    { title: 'Dam Byxor och Leggings',      handle: 'dam-byxor' },
+    { title: 'Dam Jackor',                  handle: 'dam-jackor' },
+    { title: 'Dam Underställ',              handle: 'dam-underst-ll' },
+    // Sport-BH
+    { title: 'Sport-BH Lätt Support',   handle: 'sport-bh-latt' },
+    { title: 'Sport-BH Medium Support', handle: 'sport-bh-medium' },
+    { title: 'Sport-BH Hög Support',    handle: 'sport-bh-hog' },
+    // Dam skor
+    { title: 'Dam Löparskor',       handle: 'dam-loparskor' },
+    { title: 'Dam Träningsskor',    handle: 'dam-traningsskor' },
+    { title: 'Dam Vandringskängor', handle: 'dam-vandring' },
+    // Barn kläder
+    { title: 'Barn T-shirts och Hoodies',  handle: 'barn-t-shirts' },
+    { title: 'Barn Shorts och Byxor',      handle: 'barn-shorts' },
+    { title: 'Barn Jackor och Regnkläder', handle: 'barn-jackor' },
+    { title: 'Barn Outdoorkläder',         handle: 'barn-outdoor' },
+    { title: 'Barn Underställ',            handle: 'barn-underst-ll' },
+    // Barn skor
+    { title: 'Barn Löparskor',       handle: 'barn-loparskor' },
+    { title: 'Barn Träningsskor',    handle: 'barn-traningsskor' },
+    { title: 'Barn Outdoorskor',     handle: 'barn-outdoorskor' },
+    { title: 'Barn Vandringskängor', handle: 'barn-vandring' },
+    // Sport
+    { title: 'Träning och Fitness',     handle: 'traning-fitness' },
+    { title: 'Friluftsliv och Outdoor', handle: 'friluftsliv-outdoor' },
+    { title: 'Löpning',                 handle: 'lopning' },
+    { title: 'Yoga',                    handle: 'yoga' },
+    { title: 'Cykling',                 handle: 'cykling' },
+    { title: 'Vandring och Camping',    handle: 'vandring' },
+    { title: 'Smart Teknik',            handle: 'smart-teknik' },
+    { title: 'Aterhamtning och Halsa',  handle: 'aterhämtning-halsa' },
+    { title: 'Kost och Vatska',         handle: 'kost-vatska' },
+    { title: 'Utrustning och Tillbehor',handle: 'utrustning-tillbehor' },
+    { title: 'Livsstil',                handle: 'livsstil' },
+  ];
+
+  const results = { created: [], existing: [], failed: [] };
+  const delay = ms => new Promise(r => setTimeout(r, ms));
+
+  for (const col of COLLECTIONS) {
+    try {
+      const checkRes = await axios.get(
+        `https://${domain}/admin/api/2024-01/custom_collections.json?handle=${col.handle}`,
+        { headers: { 'X-Shopify-Access-Token': token } }
+      );
+      if (checkRes.data.custom_collections?.length > 0) {
+        results.existing.push(col.title);
+      } else {
+        await axios.post(
+          `https://${domain}/admin/api/2024-01/custom_collections.json`,
+          { custom_collection: { title: col.title, handle: col.handle, published: true, sort_order: col.sort || 'best-selling' } },
+          { headers: { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' } }
+        );
+        results.created.push(col.title);
+        console.log('✓ Created collection:', col.title);
+      }
+      await delay(300);
+    } catch(e) {
+      results.failed.push({ title: col.title, error: e.message });
+      console.error('Collection failed:', col.title, e.message);
+    }
+  }
+
+  res.json({
+    ok: true,
+    created: results.created.length,
+    existing: results.existing.length,
+    failed: results.failed.length,
+    details: results
+  });
+});
+
 // ── CRON: Run every 6 hours ────────────────────────────────
 cron.schedule('0 */12 * * *', () => {
   console.log('Cron: Starting scheduled research...');

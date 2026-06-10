@@ -4,10 +4,9 @@
  */
 
 require('dotenv').config();
-const fetch = require('node-fetch');
 
-const SHOP  = process.env.SHOPIFY_SHOP_DOMAIN;
-const TOKEN = process.env.SHOPIFY_ACCESS_TOKEN;
+const SHOP  = process.env.SHOPIFY_DOMAIN || process.env.SHOPIFY_SHOP_DOMAIN;
+const TOKEN = process.env.SHOP_TOKEN || process.env.SHOPIFY_ACCESS_TOKEN;
 const UNSPLASH_KEY = process.env.UNSPLASH_ACCESS_KEY;
 
 const COLLECTIONS = [
