@@ -356,16 +356,95 @@ const BLOCKED_KEYWORDS = [
 
 // Niche validation — product must relate to at least one of these
 const NICHE_KEYWORDS = [
-  'sport','fitness','gym','workout','training','exercise','running','hiking',
-  'cycling','yoga','outdoor','camping','recovery','health','wellness',
-  'compression','resistance','muscle','cardio','athletic','active',
-  'trail','trekking','climbing','swimming','rowing','crossfit',
-  'stretching','mobility','flexibility','strength','endurance',
-  'nutrition','hydration','protein','supplement','electrolyte',
-  'smartwatch','gps','heart rate','tracker','monitor','sensor',
-  'waterproof','windproof','thermal','breathable','lightweight',
-  'löpning','träning','friluftsliv','vandring','cykling','återhämtning',
-  'sport','fitness','gym','hälsa','wellness','aktiv',
+
+  // Gym & Fitness
+  'gym',
+  'fitness',
+  'workout',
+  'training',
+  'exercise',
+  'crossfit',
+  'weightlifting',
+  'strength training',
+  'resistance bands',
+  'pull up bar',
+  'ab roller',
+  'jump rope',
+  'gym gloves',
+  'weightlifting belt',
+
+  // Running
+  'running',
+  'runner',
+  'running shoes',
+  'trail running',
+  'road running',
+  'running jacket',
+  'running shorts',
+  'hydration vest',
+
+  // Outdoor
+  'outdoor',
+  'camping',
+  'hiking',
+  'trekking',
+  'hiking boots',
+  'trekking poles',
+  'sleeping bag',
+  'camping stove',
+  'camping tent',
+  'outdoor backpack',
+  'water filter',
+
+  // Cycling
+  'cycling',
+  'cyclist',
+  'bike helmet',
+  'cycling jersey',
+  'cycling shorts',
+  'cycling gloves',
+  'cycling computer',
+
+  // Recovery
+  'recovery',
+  'foam roller',
+  'massage gun',
+  'compression',
+  'compression sleeve',
+  'knee brace',
+  'ankle support',
+  'back stretcher',
+  'muscle recovery',
+
+  // Sport Tech
+  'fitness tracker',
+  'heart rate monitor',
+  'gps watch',
+  'sports earbuds',
+  'running headphones',
+  'smartwatch sport',
+
+  // Apparel
+  'training shorts',
+  'compression shirt',
+  'gym hoodie',
+  'running tights',
+  'athletic socks',
+  'thermal base layer',
+  'sportswear',
+  'athletic wear',
+
+  // Swedish
+  'träning',
+  'fitness',
+  'gym',
+  'löpning',
+  'vandring',
+  'friluftsliv',
+  'cykling',
+  'återhämtning',
+  'sportkläder',
+  'träningskläder'
 ];
 
 function isProductBlocked(product) {
