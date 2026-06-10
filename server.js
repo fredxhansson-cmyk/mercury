@@ -507,31 +507,38 @@ async function publishToShopify(product) {
       title: product.title,
       body_html: product.descriptionHtml,
       vendor: 'Meloni',
-      product_type: product.category,
+      product_type: product.aiCategory || product.category || 'Sport',
       tags: product.tags?.join(','),
       status: 'active',
-      variants: [{
-        price: product.sellPrice.toString(),
-        sku: `VIN-${product.aliId || product.cjPid || 'AUTO'}`,
-        inventory_management: 'shopify',
-        inventory_quantity: product.stock || 50,
-        weight: product.weight || 0.3,
-        weight_unit: 'kg'
-      }],
+      variants: product.sizes && product.sizes.length > 0
+        ? product.sizes.map((size, i) => ({
+            option1: size,
+            price: product.sellPrice.toString(),
+            sku: `VIN-${product.aliId || product.cjPid || 'AUTO'}-${size}`,
+            inventory_management: 'shopify',
+            inventory_quantity: Math.floor((product.stock || 50) / product.sizes.length),
+            weight: product.weight || 0.3,
+            weight_unit: 'kg'
+          }))
+        : [{
+            price: product.sellPrice.toString(),
+            sku: `VIN-${product.aliId || product.cjPid || 'AUTO'}`,
+            inventory_management: 'shopify',
+            inventory_quantity: product.stock || 50,
+            weight: product.weight || 0.3,
+            weight_unit: 'kg'
+          }],
+      options: product.sizes && product.sizes.length > 0 ? [{ name: 'Storlek', values: product.sizes }] : undefined,
       metafields: [
-        {
-          namespace: 'custom',
-          key: 'shipping_days',
-          value: String(product.shippingDays || 10),
-          type: 'number_integer'
-        },
-        {
-          namespace: 'custom',
-          key: 'source',
-          value: product.source || 'cj',
-          type: 'single_line_text_field'
-        }
-      ],
+        { namespace: 'custom', key: 'shipping_days', value: String(product.shippingDays || 10), type: 'number_integer' },
+        { namespace: 'custom', key: 'source', value: product.source || 'cj', type: 'single_line_text_field' },
+        { namespace: 'custom', key: 'gender', value: product.gender || 'unisex', type: 'single_line_text_field' },
+        { namespace: 'custom', key: 'activity', value: (product.activities||[]).join(','), type: 'single_line_text_field' },
+        { namespace: 'custom', key: 'season', value: product.season || 'året runt', type: 'single_line_text_field' },
+        { namespace: 'custom', key: 'material', value: product.material || '', type: 'single_line_text_field' },
+        { namespace: 'custom', key: 'ad_hook', value: product.adHook || '', type: 'single_line_text_field' },
+        { namespace: 'custom', key: 'score', value: String(product.score || 0), type: 'number_integer' },
+      ].filter(m => m.value),
       images: (product.images||[]).filter(u=>u&&u.startsWith('http')).slice(0, 5).map(url => ({ src: url, position: (product.images||[]).indexOf(url) + 1 }))
     }
   };
@@ -546,40 +553,52 @@ async function publishToShopify(product) {
 
 // ── OPENAI CONTENT GENERATION ──────────────────────────────
 async function generateProductContent(rawProduct) {
-  const prompt = `Du är en erfaren svensk copywriter för Vintera — en modern, kurerad livsstilsbutik. Du skriver som en riktig svensk människa, inte som en översättning från engelska. Naturlig, varm och trovärdig svenska.
+  const prompt = `Du är en erfaren svensk copywriter och produktanalytiker för Meloni — en aktiv livsstilsbutik med fokus på träning, friluftsliv och hälsa. Du skriver naturlig svenska OCH analyserar produktattribut.
 
 Produkt: ${rawProduct.nameEn || rawProduct.name}
-Kategori: ${rawProduct.categoryName || 'Allmänt'}
+Kategori: ${rawProduct.categoryName || 'Sport'}
 Beskrivning: ${rawProduct.description || 'Inte angiven'}
 
-Skriv EXAKT i detta format (all text på svenska):
+Skriv EXAKT i detta format. Fyll i ALLA fält:
 
-TITLE: [Kort, naturlig svensk titel — max 7 ord. Skriv som en svensk skulle säga det, t.ex. "Trådlös laddare för bilen" inte "Wireless Car Charger Pro Max"]
+TITLE: [Kort svensk titel, max 7 ord, ingen reklamtext]
 
-META: [SEO-beskrivning, max 155 tecken. Naturlig svenska, fördel-först. Inga utropstecken.]
+META: [SEO-beskrivning max 155 tecken, naturlig svenska]
 
-DESCRIPTION: [2 korta stycken. Skriv avslappnat och trovärdigt — som om du tipsar en vän. Ingen reklamsvenska, inga överdrifter som "revolutionerande" eller "banbrytande". Fokusera på hur produkten faktiskt hjälper i vardagen.]
+DESCRIPTION: [2 korta stycken, avslappnat och trovärdigt, fokus på funktion]
 
 BENEFITS:
-• [Konkret fördel — kort och tydlig, max 12 ord]
-• [Konkret fördel — kort och tydlig, max 12 ord]
-• [Konkret fördel — kort och tydlig, max 12 ord]
+• [Konkret fördel, max 12 ord]
+• [Konkret fördel, max 12 ord]
+• [Konkret fördel, max 12 ord]
 
 FAQ:
-Q: [Den vanligaste frågan en svensk kund skulle ställa]
-A: [Kort, ärligt svar. Inga löften du inte kan hålla.]
+Q: [Vanligaste kundfrågam]
+A: [Kort ärligt svar]
 
-AD_HOOK: [En rad för Instagram/TikTok — max 10 ord. Ska kännas äkta, inte som reklam. T.ex. "Därför har alla börjat använda den här" eller "Äntligen slipper du det här problemet"]
+AD_HOOK: [1 rad för Instagram/TikTok, max 10 ord, äkta känsla]
 
-TAGS: [5 taggar, gemener, relevanta, på svenska]
+GENDER: [herr ELLER dam ELLER unisex ELLER barn — välj ett]
 
-Viktigt: Inga engelska ord om det finns ett bra svenskt alternativ. Inget "dropshipping", inga leverantörsnamn, inga påhittade specifikationer.`;
+CATEGORY: [Träning & Fitness ELLER Friluftsliv & Outdoor ELLER Återhämtning & Hälsa ELLER Smart Teknik ELLER Kost & Vätska ELLER Utrustning & Tillbehör ELLER Löpning ELLER Vandring och Camping ELLER Cykling ELLER Yoga]
+
+ACTIVITY: [gym ELLER löpning ELLER vandring ELLER cykling ELLER yoga ELLER outdoor ELLER recovery ELLER allmän träning — kan vara flera, kommaseparerade]
+
+SEASON: [sommar ELLER vinter ELLER höst/vår ELLER året runt]
+
+MATERIAL: [huvudmaterial om känt, annars "ej specificerat"]
+
+SIZES: [om kläder/skor: XS,S,M,L,XL,XXL ELLER one size ELLER ej tillämpligt]
+
+TAGS: [8 relevanta taggar, gemener, svenska och engelska mix, kommaseparerade]
+
+Viktigt: Analysera produktnamnet noga. En "massage gun" är Återhämtning & Hälsa, unisex, activity: recovery. En "men running shoes" är Löpning, herr, activity: löpning. En "yoga mat" är Yoga, unisex, activity: yoga.`;
 
   const res = await openai.chat.completions.create({
     model: 'gpt-4o',
-    max_tokens: 900,
+    max_tokens: 1100,
     messages: [
-      { role: 'system', content: 'Du är en erfaren svensk copywriter specialiserad på aktiv livsstil, träning, friluftsliv och hälsa. Du skriver naturlig, modern svenska för en sportig målgrupp — inte översatt engelska. Returnera endast det formaterade innehållet, inget annat.' },
+      { role: 'system', content: 'Du är en erfaren svensk copywriter och produktkategoriserare för aktiv livsstil. Returnera EXAKT det formaterade innehållet utan extra text. Alla fält måste fyllas i.' },
       { role: 'user', content: prompt }
     ]
   });
@@ -588,8 +607,8 @@ Viktigt: Inga engelska ord om det finns ett bra svenskt alternativ. Inget "drops
 }
 
 function parseGeneratedContent(raw) {
-  const get = (key, next) => {
-    const pattern = new RegExp(`${key}:\\s*([\\s\\S]*?)(?=\\n[A-Z_]+:|$)`, 'i');
+  const get = (key) => {
+    const pattern = new RegExp(`${key}:\\s*([^\\n]+(?:\\n(?![A-Z_]+:)[^\\n]+)*)`, 'i');
     const match = raw.match(pattern);
     return match ? match[1].trim() : '';
   };
@@ -601,10 +620,33 @@ function parseGeneratedContent(raw) {
   const faq         = get('FAQ');
   const adHook      = get('AD_HOOK');
   const tagsRaw     = get('TAGS');
+  const gender      = get('GENDER').toLowerCase().trim();
+  const category    = get('CATEGORY').trim();
+  const activityRaw = get('ACTIVITY');
+  const season      = get('SEASON').toLowerCase().trim();
+  const material    = get('MATERIAL').trim();
+  const sizesRaw    = get('SIZES').trim();
 
   const descriptionHtml = `<p>${description.replace(/\n\n/g, '</p><p>')}</p>
 <ul>${benefits.split('\n').filter(l => l.trim().startsWith('•')).map(l => `<li>${l.replace('•','').trim()}</li>`).join('')}</ul>
-<h4>FAQ</h4>${faq}`;
+<h4>Vanliga frågor</h4>${faq}`;
+
+  // Parse sizes
+  const sizes = sizesRaw && sizesRaw !== 'ej tillämpligt' && sizesRaw !== 'one size'
+    ? sizesRaw.split(',').map(s => s.trim()).filter(Boolean)
+    : [];
+
+  // Parse activities
+  const activities = activityRaw.split(',').map(a => a.trim().toLowerCase()).filter(Boolean);
+
+  // Build comprehensive tags
+  const baseTags = tagsRaw.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+  const allTags = [...new Set([
+    ...baseTags,
+    gender !== 'unisex' ? gender : null,
+    season,
+    ...activities,
+  ].filter(Boolean))];
 
   return {
     title,
@@ -613,7 +655,14 @@ function parseGeneratedContent(raw) {
     descriptionHtml,
     benefits: benefits.split('\n').filter(l => l.trim().startsWith('•')).map(l => l.replace('•','').trim()),
     adHook,
-    tags: tagsRaw.split(',').map(t => t.trim()).filter(Boolean)
+    tags: allTags,
+    // New attributes
+    gender,
+    category,
+    activities,
+    season,
+    material,
+    sizes,
   };
 }
 
@@ -889,6 +938,13 @@ async function runProductResearch() {
           adHook: content.adHook,
           tags: [...(content.tags||[]), mapCategory(product.categoryName || product.productType || '', product.title || product.nameEn || '').tag],
           // Raw
+          // AI-detected attributes override defaults
+          gender: content.gender || 'unisex',
+          sizes: content.sizes || [],
+          activities: content.activities || [],
+          season: content.season || 'året runt',
+          material: content.material || '',
+          aiCategory: content.category || '',
           rawTitle: product.title || product.name || product.subject || 'Product',
           aliUrl: `https://www.aliexpress.com/item/${product.itemId||product.productId}.html`,
           addedAt: new Date().toISOString(),
@@ -1317,117 +1373,6 @@ app.get('/api/dashboard', (req, res) => {
     performance: store.performance || null,
     recentQueue: store.queue.slice(-3),
     topProducts: [...store.products].sort((a,b)=>(b.revenue30d||0)-(a.revenue30d||0)).slice(0,5)
-  });
-});
-
-
-// ── SKAPA ALLA KOLLEKTIONER (engångskörning) ──────────────
-app.get('/api/create-collections', async (req, res) => {
-  const domain = process.env.SHOPIFY_DOMAIN;
-  const token  = process.env.SHOP_TOKEN || process.env.SHOPIFY_TOKEN;
-  if (!domain || !token) return res.status(500).json({ error: 'Shopify not configured' });
-
-  const COLLECTIONS = [
-    // Toppnivå
-    { title: 'Nyheter',      handle: 'nyheter',      sort: 'created-descending' },
-    { title: 'Bästsäljare',  handle: 'bestsellers',  sort: 'best-selling' },
-    { title: 'Rea',          handle: 'rea',           sort: 'price-descending' },
-    // Kön
-    { title: 'Herr', handle: 'herr' },
-    { title: 'Dam',  handle: 'dam' },
-    { title: 'Barn', handle: 'barn' },
-    // Herr kläder
-    { title: 'Herr T-shirts',                handle: 'herr-t-shirts' },
-    { title: 'Herr Linnen',                  handle: 'herr-linnen' },
-    { title: 'Herr Hoodies och Sweatshirts', handle: 'herr-hoodies' },
-    { title: 'Herr Funktionskläder',         handle: 'herr-funktionskl-der' },
-    { title: 'Herr Kompressionskläder',      handle: 'herr-kompressionskl-der' },
-    { title: 'Herr Shorts',                  handle: 'herr-shorts' },
-    { title: 'Herr Byxor och Joggers',       handle: 'herr-byxor' },
-    { title: 'Herr Jackor',                  handle: 'herr-jackor' },
-    { title: 'Herr Underställ',              handle: 'herr-underst-ll' },
-    { title: 'Herr Strumpor och Underkläder',handle: 'herr-strumpor' },
-    // Herr skor
-    { title: 'Herr Löparskor',       handle: 'herr-loparskor' },
-    { title: 'Herr Träningsskor',    handle: 'herr-traningsskor' },
-    { title: 'Herr Trailskor',       handle: 'herr-trailskor' },
-    { title: 'Herr Vandringskängor', handle: 'herr-vandring' },
-    { title: 'Herr Sandaler',        handle: 'herr-sandaler' },
-    // Dam kläder
-    { title: 'Dam T-shirts och Linnen',     handle: 'dam-t-shirts' },
-    { title: 'Dam Hoodies och Sweatshirts', handle: 'dam-hoodies' },
-    { title: 'Dam Funktionskläder',         handle: 'dam-funktionskl-der' },
-    { title: 'Dam Kompressionskläder',      handle: 'dam-kompressionskl-der' },
-    { title: 'Dam Shorts och Tights',       handle: 'dam-shorts' },
-    { title: 'Dam Byxor och Leggings',      handle: 'dam-byxor' },
-    { title: 'Dam Jackor',                  handle: 'dam-jackor' },
-    { title: 'Dam Underställ',              handle: 'dam-underst-ll' },
-    // Sport-BH
-    { title: 'Sport-BH Lätt Support',   handle: 'sport-bh-latt' },
-    { title: 'Sport-BH Medium Support', handle: 'sport-bh-medium' },
-    { title: 'Sport-BH Hög Support',    handle: 'sport-bh-hog' },
-    // Dam skor
-    { title: 'Dam Löparskor',       handle: 'dam-loparskor' },
-    { title: 'Dam Träningsskor',    handle: 'dam-traningsskor' },
-    { title: 'Dam Vandringskängor', handle: 'dam-vandring' },
-    // Barn kläder
-    { title: 'Barn T-shirts och Hoodies',  handle: 'barn-t-shirts' },
-    { title: 'Barn Shorts och Byxor',      handle: 'barn-shorts' },
-    { title: 'Barn Jackor och Regnkläder', handle: 'barn-jackor' },
-    { title: 'Barn Outdoorkläder',         handle: 'barn-outdoor' },
-    { title: 'Barn Underställ',            handle: 'barn-underst-ll' },
-    // Barn skor
-    { title: 'Barn Löparskor',       handle: 'barn-loparskor' },
-    { title: 'Barn Träningsskor',    handle: 'barn-traningsskor' },
-    { title: 'Barn Outdoorskor',     handle: 'barn-outdoorskor' },
-    { title: 'Barn Vandringskängor', handle: 'barn-vandring' },
-    // Sport
-    { title: 'Träning och Fitness',     handle: 'traning-fitness' },
-    { title: 'Friluftsliv och Outdoor', handle: 'friluftsliv-outdoor' },
-    { title: 'Löpning',                 handle: 'lopning' },
-    { title: 'Yoga',                    handle: 'yoga' },
-    { title: 'Cykling',                 handle: 'cykling' },
-    { title: 'Vandring och Camping',    handle: 'vandring' },
-    { title: 'Smart Teknik',            handle: 'smart-teknik' },
-    { title: 'Aterhamtning och Halsa',  handle: 'aterhämtning-halsa' },
-    { title: 'Kost och Vatska',         handle: 'kost-vatska' },
-    { title: 'Utrustning och Tillbehor',handle: 'utrustning-tillbehor' },
-    { title: 'Livsstil',                handle: 'livsstil' },
-  ];
-
-  const results = { created: [], existing: [], failed: [] };
-  const delay = ms => new Promise(r => setTimeout(r, ms));
-
-  for (const col of COLLECTIONS) {
-    try {
-      const checkRes = await axios.get(
-        `https://${domain}/admin/api/2024-01/custom_collections.json?handle=${col.handle}`,
-        { headers: { 'X-Shopify-Access-Token': token } }
-      );
-      if (checkRes.data.custom_collections?.length > 0) {
-        results.existing.push(col.title);
-      } else {
-        await axios.post(
-          `https://${domain}/admin/api/2024-01/custom_collections.json`,
-          { custom_collection: { title: col.title, handle: col.handle, published: true, sort_order: col.sort || 'best-selling' } },
-          { headers: { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' } }
-        );
-        results.created.push(col.title);
-        console.log('✓ Created collection:', col.title);
-      }
-      await delay(300);
-    } catch(e) {
-      results.failed.push({ title: col.title, error: e.message });
-      console.error('Collection failed:', col.title, e.message);
-    }
-  }
-
-  res.json({
-    ok: true,
-    created: results.created.length,
-    existing: results.existing.length,
-    failed: results.failed.length,
-    details: results
   });
 });
 
