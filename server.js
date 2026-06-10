@@ -490,7 +490,7 @@ function isProductBlocked(product) {
 
 // Auto-publish threshold
 const AUTO_PUBLISH_SCORE = 999; // Disabled — all products go to approval queue
-const MIN_SCORE = 75;          // Products below 60 are rejected
+const MIN_SCORE = 80;          // Products below 60 are rejected
 const MAX_SHIPPING_DAYS = 21;  // Max shipping days — only used when data is available
 
 // ── ALIEXPRESS DATAHUB API (via RapidAPI) ─────────────────
@@ -600,15 +600,84 @@ async function searchCJProducts(token, keyword, limit = 20) {
 }
 
 function scoreCJProduct(product, index) {
-  let score = 50; // Base score — CJ products are pre-vetted
+  let score = 40;
+
+  const text = [
+    product.nameEn,
+    product.name,
+    product.categoryName,
+    product.description
+  ].join(' ').toLowerCase();
+
+  // Pris
   const price = parseFloat(product.sellPrice) || 10;
-  if (price >= 1 && price <= 100) score += 15;
+  if (price >= 5 && price <= 80) score += 10;
+
+  // Ordrar
   const orders = parseInt(product.orderCount) || 0;
   score += Math.min(20, orders / 50);
+
+  // Bilder
   const imgs = (product.productImageSet || []).length;
   score += Math.min(10, imgs * 2);
+
+  // Prioriterade Meloni-kategorier
+  const premiumKeywords = [
+    'running shoes',
+    'trail running',
+    'gym shoes',
+    'training shoes',
+    'hiking boots',
+    'outdoor backpack',
+    'gym bag',
+    'compression',
+    'massage gun',
+    'foam roller',
+    'cycling jersey',
+    'cycling shorts',
+    'fitness tracker',
+    'heart rate monitor'
+  ];
+
+  const goodKeywords = [
+    'running',
+    'training',
+    'fitness',
+    'gym',
+    'hiking',
+    'trekking',
+    'camping',
+    'cycling',
+    'recovery',
+    'sportswear'
+  ];
+
+  const weakKeywords = [
+    'casual',
+    'fashion',
+    'lifestyle',
+    'daily wear',
+    'streetwear',
+    'sandals',
+    'sneakers'
+  ];
+
+  premiumKeywords.forEach(k => {
+    if (text.includes(k)) score += 15;
+  });
+
+  goodKeywords.forEach(k => {
+    if (text.includes(k)) score += 5;
+  });
+
+  weakKeywords.forEach(k => {
+    if (text.includes(k)) score -= 10;
+  });
+
+  // Rank bonus
   score += Math.max(0, 10 - index);
-  return Math.min(100, Math.round(score));
+
+  return Math.max(0, Math.min(100, Math.round(score)));
 }
 
 // ── SHOPIFY API ────────────────────────────────────────────
