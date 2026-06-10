@@ -376,7 +376,7 @@ function isProductBlocked(product) {
 // Auto-publish threshold
 const AUTO_PUBLISH_SCORE = 60; // Products scoring 60+ go live automatically
 const MIN_SCORE = 60;          // Products below 60 are rejected
-const MAX_SHIPPING_DAYS = 14;  // Max shipping days to Sweden — longer is filtered out
+const MAX_SHIPPING_DAYS = 21;  // Max shipping days — only used when data is available
 
 // ── ALIEXPRESS DATAHUB API (via RapidAPI) ─────────────────
 let aliExpressDisabled = false; // Auto-disable if quota exceeded
@@ -742,12 +742,6 @@ async function runProductResearch() {
           store.stats.totalScanned += products.length;
           products.forEach((p, i) => {
             const score = scoreCJProduct(p, i);
-            // Filter out slow shipping
-            const shipDays = parseInt(p.shippingTime) || 99;
-            if (shipDays > MAX_SHIPPING_DAYS) {
-              console.log(`⏱ Skipped slow shipping: ${p.nameEn||p.name} (${shipDays} days)`);
-              return; // forEach uses return, not continue
-            }
             if (score >= 20) {
               candidates.push({
                 ...p,
