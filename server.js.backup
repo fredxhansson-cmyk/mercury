@@ -295,63 +295,27 @@ async function addProductToCollection(productId, collectionName) {
 
 // ── CONTENT FILTER ────────────────────────────────────────
 const BLOCKED_KEYWORDS = [
-  // Sex / Adult
-  'sex','adult','erotic','porn','porno','nude','naked',
-  'vibrator','vibrat','dildo','buttplug','condom',
-  'penis','vagina','anal','fetish','bdsm','lingerie sexy',
-
-  // Våld / Vapen
-  'gun','weapon','weapons','sword','knife','dagger',
-  'bullet','ammo','ammunition','firearm','pistol',
-  'rifle','grenade','crossbow','tactical','military weapon',
-
-  // Droger / Alkohol / Tobak
-  'drug','drugs','cannabis','marijuana','weed',
-  'cocaine','heroin','lsd','mushroom',
-  'whiskey','whisky','beer','wine','vodka',
-  'cigarette','tobacco','vape','e-cigarette','hookah',
-
+  // Adult/sexual
+  'sex','adult','erotic','porn','nude','vibrat','dildo','condom','penis','vagina',
+  // Weapons
+  'gun','weapon','sword','bullet','ammo','firearm','pistol','rifle','grenade',
+  // Drugs/alcohol  
+  'drug','cannabis','marijuana','cocaine','whiskey','whisky','beer','wine','vodka',
+  'cigarette','tobacco','vape','e-cigarette',
   // Gambling
-  'gambling','casino','betting','poker','slot machine',
-
-  // Piratkopior
-  'fake','replica','counterfeit','copy version','knockoff',
-
-  // Bil & Motor
-  'automobile','automotive','vehicle','motorcycle',
-  'speedometer','dashboard','windshield',
-  'car mat clip','glovebox','engine part',
-
-  // Hem & Inredning
-  'curtain','tablecloth','wall sticker',
-  'picture frame','vase','candle holder',
-  'home decor','home decoration',
-
-  // Husdjur
+  'gambling','casino','betting',
+  // Fakes
+  'fake','replica','counterfeit',
+  // Car/auto parts (not relevant)
+  'speedometer','glovebox','car mat clip','windshield','dashboard clip',
+  // Home decor (not our niche)
+  'curtain','tablecloth','wall sticker','picture frame','vase','candle holder',
+  // Pet clothing
   'pet dress','dog dress','cat costume',
-  'pet clothes','pet clothing',
-
-  // Beauty / Hudvård
-  'beauty','skincare','skin care',
-  'facial','face patch','face patches',
-  'face mask','anti aging','anti-aging',
-  'wrinkle','wrinkles','serum','cleanser',
-  'lip balm','lipstick','mascara',
-  'foundation','eyeshadow','nail polish',
-  'eyelash','cosmetic','cosmetics',
-  'makeup','make-up','skin treatment',
-
-  // Smycken / Mode utanför sport
-  'jewelry','necklace','earring','bracelet',
-  'ring','luxury watch','wedding dress',
-  'evening dress','tuxedo','high heel','stiletto',
-
-  // Barnprodukter vi inte vill sälja
-  'baby bottle','baby diaper','pacifier',
-
-  // Elektronik utanför sport
-  'gaming keyboard','gaming mouse',
-  'led strip','phone case','tablet case'
+  // Beauty/makeup (not our niche unless recovery/health)
+  'lipstick','mascara','foundation','eyeshadow','nail polish','eyelash',
+  // Fashion accessories (not sport)
+  'high heel','stiletto','evening dress','wedding dress','tuxedo',
 ];
 
 // Niche validation — product must relate to at least one of these
@@ -411,7 +375,7 @@ function isProductBlocked(product) {
 
 // Auto-publish threshold
 const AUTO_PUBLISH_SCORE = 999; // Disabled — all products go to approval queue
-const MIN_SCORE = 75;          // Products below 60 are rejected
+const MIN_SCORE = 60;          // Products below 60 are rejected
 const MAX_SHIPPING_DAYS = 21;  // Max shipping days — only used when data is available
 
 // ── ALIEXPRESS DATAHUB API (via RapidAPI) ─────────────────
@@ -707,86 +671,29 @@ function scoreProduct(product, index) {
 
 // ── TREND KEYWORDS ─────────────────────────────────────────
 const TREND_KEYWORDS = [
-
-  // ── HERR ─────────────────────────────
-  'men running jacket',
-  'men gym hoodie',
-  'men training shorts',
-  'men compression shirt',
-  'men hiking pants',
-  'men running shoes',
-  'men trail running shoes',
-  'men gym shoes',
-  'men thermal base layer',
-  'men athletic socks',
-
-  // ── DAM ──────────────────────────────
-  'women running jacket',
-  'women gym hoodie',
-  'women training shorts',
-  'women running tights',
-  'women compression leggings',
-  'women running shoes',
-  'women trail running shoes',
-  'women gym shoes',
-  'women thermal base layer',
-  'women athletic socks',
-
-  // ── GYM & FITNESS ────────────────────
-  'resistance bands',
-  'pull up bar',
-  'ab roller',
-  'jump rope',
-  'gym gloves',
-  'weightlifting belt',
-  'fitness tracker',
-  'heart rate monitor',
-  'gym bag',
-  'protein shaker',
-
-  // ── LÖPNING ──────────────────────────
-  'running hydration vest',
-  'running belt',
-  'running cap',
-  'road running shoes',
-  'trail running shoes',
-  'running backpack',
-
-  // ── OUTDOOR ──────────────────────────
-  'hiking boots',
-  'trekking poles',
-  'camping tent',
-  'sleeping bag',
-  'outdoor backpack',
-  'waterproof jacket',
-  'camping stove',
-  'water filter outdoor',
-  'camping lantern',
-  'camping cookware',
-
-  // ── CYKLING ──────────────────────────
-  'bike helmet',
-  'cycling gloves',
-  'cycling jersey',
-  'cycling shorts',
-  'cycling backpack',
-  'cycling computer',
-
-  // ── RECOVERY ─────────────────────────
-  'massage gun',
-  'foam roller',
-  'knee brace support',
-  'back stretcher',
-  'compression sleeve',
-  'ankle support',
-  'muscle roller stick',
-
-  // ── SMART SPORT TECH ─────────────────
-  'gps watch',
-  'running headphones',
-  'sports earbuds wireless',
-  'action camera',
-  'solar charger outdoor'
+  // Träning & Fitness
+  'resistance bands', 'massage gun', 'foam roller', 'pull up bar',
+  'jump rope', 'gym gloves', 'weightlifting belt', 'ab roller',
+  'fitness tracker', 'smartwatch sport', 'heart rate monitor',
+  'yoga mat', 'yoga block', 'workout leggings', 'sports bra high support',
+  'compression socks', 'gym bag', 'water bottle insulated',
+  'protein shaker', 'gym shoes men', 'running shoes women',
+  // Friluftsliv & Outdoor
+  'hiking boots', 'trekking poles', 'camping headlamp',
+  'sleeping bag', 'outdoor backpack', 'waterproof jacket',
+  'trail running shoes', 'cycling gloves', 'bike helmet',
+  'carabiner', 'camping stove', 'water filter outdoor',
+  // Återhämtning & Hälsa
+  'knee brace support', 'back stretcher', 'posture corrector',
+  'acupressure mat', 'ice pack recovery', 'compression sleeve',
+  'ankle support', 'elbow brace', 'muscle roller stick',
+  'sleep mask', 'eye mask heated', 'neck massager',
+  // Smart Teknik sport
+  'running headphones', 'sports earbuds wireless', 'gps watch',
+  'cycling computer', 'action camera', 'solar charger outdoor',
+  // Kost & Vätska  
+  'meal prep container', 'supplement organizer', 'blender bottle',
+  'electrolyte powder', 'energy gel', 'hydration vest',
 ];
 
 // ── MAIN RESEARCH PIPELINE ─────────────────────────────────
@@ -799,7 +706,7 @@ async function runProductResearch() {
   try {
     const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
   const delay = ms => new Promise(r => setTimeout(r, ms));
-    const keywords = shuffle(TREND_KEYWORDS).slice(0, 10);
+    const keywords = shuffle(TREND_KEYWORDS).slice(0, 3);
     console.log('Researching keywords:', keywords);
 
     let candidates = [];
@@ -828,7 +735,7 @@ async function runProductResearch() {
       console.log('Searching CJ Dropshipping...');
       const cjToken = await getCJToken();
       if (cjToken) {
-        const cjKeywords = shuffle(TREND_KEYWORDS).slice(0, 10);
+        const cjKeywords = shuffle(TREND_KEYWORDS).slice(0, 3);
         for (const keyword of cjKeywords) {
           await delay(2000); // 2s between CJ requests to avoid rate limits
           const products = await searchCJProducts(cjToken, keyword, 10);
