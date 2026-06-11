@@ -243,60 +243,146 @@ async function addProductToCollection(productId, collectionName) {
 
 // ── CONTENT FILTER ─────────────────────────────────────────
 const BLOCKED_KEYWORDS = [
-  // Sex / Adult
+  // ── Sex / Adult ──────────────────────────────────────────
   'vibrator','dildo','buttplug','condom','penis','vagina','anal','fetish','bdsm','lingerie sexy',
-  // Vapen
+
+  // ── Vapen ────────────────────────────────────────────────
   'gun','weapon','weapons','sword','knife','dagger','bullet','ammo','ammunition','firearm','pistol',
   'rifle','grenade','crossbow','military weapon',
-  // Droger / Alkohol / Tobak
+
+  // ── Droger / Alkohol / Tobak ──────────────────────────────
   'drug','drugs','cannabis','marijuana','weed','cocaine','heroin','lsd',
-  'whiskey','whisky',' beer ',' wine ','vodka','cigarette','tobacco','vape','e-cigarette','hookah',
-  // Gambling
+  'whiskey','whisky','vodka','cigarette','tobacco','vape','e-cigarette','hookah',
+
+  // ── Gambling ──────────────────────────────────────────────
   'gambling','casino','betting','poker','slot machine',
-  // Piratkopior
+
+  // ── Piratkopior ───────────────────────────────────────────
   'fake','replica','counterfeit','copy version','knockoff',
-  // Bil & Motor — generiska termer
+
+  // ── Bil & Motor ───────────────────────────────────────────
   'automobile','automotive','speedometer','windshield','car mat clip','glovebox','engine part',
-  'dashboard cam','dash cam','obd','car charger','car mount','steering wheel',
-  'truck bed','trailer hitch','car seat cover','windshield wiper',
-  // Hem & Inredning
-  'curtain','tablecloth','wall sticker','picture frame','vase','candle holder',
-  'home decor','home decoration','sofa','couch','bedding','duvet','pillow cover',
-  'mattress','latex mattress','floor mat','door mat','shower curtain',
-  'garden light','solar garden','garden lamp','garden stone','glowing stone',
-  'solar lamp','garden decoration','lawn','planter','flower pot',
-  // Husdjur
-  'pet dress','dog dress','cat costume','pet clothes','pet clothing',
-  'cat toy','dog toy','pet food','cat litter','dog collar','pet bed',
-  'cat scratch','dog leash','fish tank','aquarium','bird cage',
-  // Beauty / Hudvård
+  'dashboard cam','dash cam','obd2','car charger','car mount','steering wheel cover',
+  'truck bed','trailer hitch','car seat cover','windshield wiper','car floor mat',
+  'auto part','car part','vehicle part','motor oil','engine oil',
+
+  // ── Hem & Inredning ───────────────────────────────────────
+  'curtain','tablecloth','wall sticker','wall art','picture frame','vase','candle holder',
+  'home decor','home decoration','sofa','couch','bedding','duvet','pillow cover','pillow case',
+  'mattress','latex mattress','floor mat','door mat','shower curtain','bath mat',
+  'kitchen towel','dish cloth','storage box','wardrobe organiser',
+  'garden light','solar garden','garden lamp','garden stone','glowing stone','glow stone',
+  'solar lamp','garden decoration','lawn','planter','flower pot','garden ornament',
+  'mosquito killer','bug zapper','fly trap','insect killer',
+  'picnic blanket','picnic mat','picnic set','blanket throw','fleece blanket',
+  'pool float','inflatable pool','paddling pool','pool toy','pool mat',
+  'sun lounger','deck chair','patio chair','garden chair','outdoor cushion',
+  'toilet','bathroom','bidet','soap dispenser','toothbrush holder',
+
+  // ── Husdjur (utökad) ──────────────────────────────────────
+  'pet dress','pet clothes','pet clothing','pet costume','pet outfit','pet accessory',
+  'dog dress','dog clothes','dog costume','dog collar','dog leash','dog harness',
+  'dog food','dog treat','dog bed','dog toy','dog grooming','dog brush','dog shampoo',
+  'cat dress','cat costume','cat clothes','cat collar','cat toy','cat tree','cat litter',
+  'cat food','cat treat','cat bed','cat scratch','cat grooming',
+  'pet food','pet treat','pet bed','pet bowl','pet carrier','pet stroller',
+  'fish tank','aquarium','fish food','bird cage','bird food','hamster','rabbit',
+  'guinea pig','parrot','reptile','turtle','lizard',
+  'husdjur','hundhalsband','hundkoppel','kattsand','kattmat','hundmat',
+  'husdjurskläder','djurkläder','sällskapsdjur',
+  'kosttillskott för husdjur','vitamin för hund','vitamin för katt',
+
+  // ── Beauty / Hudvård (utökad) ─────────────────────────────
   'beauty','skincare','skin care','facial','face patch','face mask','anti aging','anti-aging',
-  'wrinkle','serum','cleanser','lip balm','lipstick','mascara',
-  'foundation','eyeshadow','nail polish','eyelash','cosmetic','cosmetics','makeup','make-up',
-  // Smycken / Mode
-  'jewelry','necklace','earring','bracelet','luxury watch','wedding dress',
-  'evening dress','tuxedo','high heel','stiletto','fashion ring','anklet',
-  // Baby
-  'baby bottle','baby diaper','pacifier','baby formula','baby wipe',
-  // Elektronik utanför nisch
-  'gaming keyboard','gaming mouse','led strip','phone case','tablet case',
-  'laptop stand','monitor stand','desk lamp','office chair',
-  // Student / generellt mode
-  'student','casual wear','streetwear','daily wear','fashion sneaker',
-  // Solstol / Hem-outdoor
-  'sun lounger','deck chair','patio chair','garden chair cushion','pool float',
-  'inflatable pool','paddling pool',
+  'wrinkle','serum','cleanser','toner','moisturizer','lip balm','lipstick','mascara',
+  'foundation','eyeshadow','nail polish','nail gel','eyelash','eyeliner','concealer',
+  'cosmetic','cosmetics','makeup','make-up','skin treatment','face cream','body lotion',
+  'hair removal','epilator','hair mask','hair serum','hair oil','scalp treatment',
+  'neck cream','eye cream','body scrub','exfoliant','pore strip',
+  'kräm för nacken','ansiktskräm','hårborttagare','ansiktspatches',
+
+  // ── Smycken / Mode utanför sport ─────────────────────────
+  'jewelry','necklace','earring','bracelet','anklet','luxury watch','fashion ring',
+  'wedding dress','evening dress','cocktail dress','party dress','prom dress',
+  'tuxedo','high heel','stiletto','platform shoes','ballet flat',
+  'hair clip','hair band','hair bow','hair accessories','scrunchie','hårsnodd','hårklämmor',
+  'klänning','kjol','skirt','blouse','tunika','tunique','tube dress','tubklänning',
+  'polotröja','stickad tröja','kabelstickad','cardigan','cocktailklänning',
+  'ring med','zirkon','guldfärgad ring','silverring','modesmycke',
+
+  // ── Underkläder / BH (utanför sport) ─────────────────────
+  'bra ','bralette','underwire bra','push up bra','nursing bra','post surgery bra',
+  'operation bh','bh med','stödjande bh','front knäppning bh',
+  'underwear set','lingerie set','thong','string','boxers fashion',
+
+  // ── Baby & Barn (utanför sport) ───────────────────────────
+  'baby bottle','baby diaper','pacifier','baby formula','baby wipe','baby monitor',
+  'baby carrier','baby swing','baby toy','rattle','teether','crib','stroller',
+  'barnklänning','babykläder','leksak för barn','träribba leksak',
+  'läsningsräknare','räknare i trä','pedagogisk leksak',
+
+  // ── Elektronik utanför sport ──────────────────────────────
+  'gaming keyboard','gaming mouse','gaming chair','gaming headset',
+  'led strip','led lights','rgb light','smart bulb','smart plug',
+  'phone case','tablet case','laptop stand','monitor stand','desk lamp',
+  'office chair','desk organiser','cable management','usb hub',
+  'whiskeyflaska','whiskey glass','wine glass','cocktail shaker','hip flask',
+
+  // ── Mat & Dryck ───────────────────────────────────────────
+  'coffee maker','espresso','blender','juicer','food processor','air fryer',
+  'cutting board','knife set','cooking pot','frying pan','baking tray',
+
+  // ── Trädgård & Lek ──────────────────────────────────────────
+  'trampoline','trampolin','barntrampolin','bouncy castle','swing set','playground',
+  'sandlåda','sandpit','slide','rutschkana','lekredskap','lekställning',
+  'hopprep för barn','hoppslott',
+
+  // ── Rengöring & Hushåll ───────────────────────────────────
+  'cleaning brush','bathroom brush','toilet brush','scrubbing brush','floor scrubber',
+  'electric cleaning','rengöringsborste','badrumsborste','toalettborste','skurborste',
+  'mop','mopp','dammsugare','vacuum cleaner','steam cleaner','pressure washer',
+  'dishwasher','washing machine','dryer','iron','ironing board',
+  'laundry bag','laundry basket','tvättväska','torkställning',
+  'rengöringsmedel','städprodukter','cleaning product','detergent',
+
+  // ── Verktyg & Bygg ────────────────────────────────────────
+  'drill','screwdriver','wrench','hammer','saw','power tool',
+  'toolbox','verktyg','skruvdragare','borr','såg',
+
+  // ── Kontor & Skola ────────────────────────────────────────
+  'whiteboard','chalkboard','school bag','pencil case','notebook','binder',
+  'skolväska','pennfodral','anteckningsbok',
+
+  // ── Övrigt skräp ──────────────────────────────────────────
+  'student','casual wear','streetwear','daily wear',
+  'hållningskorrigerare','hållningsband','posture brace',
+  'hallux valgus','tå stöd','fotstöd ortopedisk',
+  'läsglasögon','reading glasses','magnifying glass',
+  'pennhållare','kontorsartiklar','skrivbordstillbehör',
 ];
 
-// Car model names — checked separately against title
+// ── Bilmodeller — matchas mot titel ──────────────────────────
 const CAR_MODELS = [
-  'pontiac','firebird','trans am','dodge','ram pickup','ford f-','chevy','chevrolet',
-  'toyota camry','toyota corolla','honda civic','honda accord','bmw 3','bmw 5',
-  'mercedes c-','mercedes e-','audi a4','audi a6','volkswagen golf','vw golf',
-  '4runner','tacoma','tundra','silverado','f-150','mustang','camaro',
+  'pontiac','firebird','trans am',
+  'dodge','ram 1500','ram pickup',
+  'ford f-150','ford f150','ford ranger','ford explorer','ford mustang',
+  'chevy','chevrolet','silverado','colorado',
+  'toyota camry','toyota corolla','toyota rav4','toyota highlander',
+  'honda civic','honda accord','honda crv',
+  'bmw 3 series','bmw 5 series','bmw x5',
+  'mercedes c-class','mercedes e-class','mercedes glc',
+  'audi a4','audi a6','audi q5',
+  'volkswagen golf','vw golf','vw passat',
+  '4runner','tacoma','tundra','camaro',
   'wrangler','grand cherokee','durango','charger','challenger',
-  'cadillac','buick','oldsmobile','lincoln','infiniti','lexus rx','acura',
-  'subaru outback','mazda cx','kia sorento','hyundai tucson',
+  'cadillac','buick','oldsmobile','lincoln navigator',
+  'infiniti','lexus rx','lexus es','acura mdx',
+  'subaru outback','subaru forester',
+  'mazda cx-5','mazda 3',
+  'kia sorento','kia sportage',
+  'hyundai tucson','hyundai santa fe',
+  'nissan altima','nissan rogue','nissan pathfinder',
+  'gmc sierra','gmc canyon',
 ];
 
 const NICHE_KEYWORDS = [
@@ -319,33 +405,150 @@ const NICHE_KEYWORDS = [
   'träning','fitness','gym','löpning','vandring','friluftsliv','cykling','återhämtning','sportkläder','träningskläder'
 ];
 
+// ── WHITELIST — produkten MÅSTE matcha minst ett av dessa ──
+// Om ingen match → blockeras oavsett vad NICHE_KEYWORDS säger.
+const WHITELIST_KEYWORDS = [
+  // Gym & Styrka
+  'gym','crossfit','weightlifting','resistance band','pull up','ab roller',
+  'jump rope','kettlebell','dumbbell','barbell','weight plate','squat',
+  'bench press','deadlift','push up','pull up bar','battle rope','agility',
+  'gym gloves','lifting belt','lifting straps','wrist wrap','squat pad',
+  'weighted vest','plyometric','functional training',
+
+  // Löpning
+  'running shoe','trail running','road running','running jacket','running tights',
+  'running shorts','running vest','running belt','running cap','running sock',
+  'running headband','running backpack','hydration vest','running watch',
+  'jogging','marathon','sprint','track running',
+
+  // Träningskläder — specifikt sportkläder
+  'compression shirt','compression tights','compression leggings','compression shorts',
+  'base layer','thermal running','sport legging','gym legging','gym short',
+  'gym hoodie','gym shirt','training short','training tight','training jacket',
+  'sport bra','sports bra','athletic top','workout top','gym top','tank top gym',
+  'sport top','performance shirt','dry fit','dri fit','moisture wicking',
+  'sport sock','athletic sock','running sock','compression sock',
+  'gym pant','training pant','track pant','jogger sport','sweatpant gym',
+  'sport fleece','windbreaker sport','softshell sport','rain jacket sport',
+  'thermal underwear sport','base layer bottom',
+
+  // Träningsskor
+  'training shoe','gym shoe','crossfit shoe','workout shoe','athletic shoe',
+  'trail shoe','hiking boot','hiking shoe','trekking boot','approach shoe',
+  'running shoe','trail runner','minimalist shoe','barefoot shoe',
+
+  // Cykling
+  'cycling jersey','cycling short','cycling tight','cycling jacket','cycling glove',
+  'cycling shoe','cycling helmet','bike helmet','cycling sock','cycling cap',
+  'cycling computer','bike computer','cycling backpack','bike bag','saddle bag',
+  'cycling light','bike light','cycling water bottle','bike rack',
+
+  // Outdoor & Friluftsliv
+  'hiking backpack','trekking backpack','outdoor backpack','daypack',
+  'camping tent','backpacking tent','sleeping bag','sleeping pad','bivvy',
+  'trekking pole','hiking pole','walking pole','nordic walking',
+  'camping stove','camp stove','camping cookware','camping pot','mess kit',
+  'headlamp','camping lantern','camp light',
+  'water filter','water purifier',
+  'carabiner','climbing harness','climbing rope','belay',
+  'survival kit','emergency blanket','fire starter',
+  'kayaking','paddling','canoe paddle','kayak',
+
+  // Yoga & Pilates
+  'yoga mat','yoga block','yoga strap','yoga wheel','yoga towel',
+  'pilates ring','pilates mat','pilates sock','meditation cushion',
+  'yoga legging','yoga top','yoga short','yoga pant',
+
+  // Återhämtning
+  'massage gun','foam roller','massage ball','trigger point',
+  'knee brace','ankle brace','elbow brace','wrist brace','back brace',
+  'compression sleeve','calf sleeve','shin splint',
+  'posture corrector','back stretcher','acupressure mat',
+  'ice bath','cold therapy','heat therapy','kinesio tape','sports tape',
+  'recovery sandal','recovery boot','percussion massager',
+
+  // Smart Sportteknik
+  'fitness tracker','activity tracker','smart watch sport','gps watch',
+  'heart rate monitor','chest strap heart','running watch','triathlon watch',
+  'sports earbuds','bone conduction','wireless sport headphone','waterproof earbuds',
+  'action camera','sports camera','helmet camera','bike camera',
+  'cycling computer','gps cycling','cadence sensor','speed sensor bike',
+  'solar charger outdoor','camping power bank',
+
+  // Kost & Vätska
+  'protein shaker','water bottle sport','hydration bottle','insulated bottle',
+  'hydration vest','running flask','trail flask',
+  'electrolyte','energy gel','energy bar sport','protein bar',
+  'meal prep container sport',
+
+  // Accessoarer inom sport
+  'gym bag','sports bag','kit bag','duffle bag sport',
+  'sport backpack','athletic backpack',
+  'gym towel','sport towel','microfiber sport',
+  'sport watch','sport band',
+  'swimming goggle','swim goggle','swim cap','swimming fin',
+  'ski goggle','ski helmet','ski glove','ski pole','snowboard',
+  'climbing shoe','bouldering shoe',
+
+  // Svenska termer
+  'träningsskor','löparskor','trailskor','vandringskängor','vandringsskor',
+  'träningsbyxor','träningsshorts','träningsjacka','träningströja',
+  'kompressionströja','kompressionsbyxor','funktionsunderkläder','underställ sport',
+  'sport-bh','sportbh','tränings-bh',
+  'cykelhjälm','cykelbyxor','cykeltroja','cykelhandskar',
+  'löparbyxor','löpartröja','löparjacka','löparkeps','löparväska',
+  'yogamatta','yogablock','yogarep',
+  'massagepistol','skumrulle','knästöd','ankelbandage',
+  'pulsklocka','aktivitetsarmband','sportörlurar','actionkamera',
+  'vattenflaska sport','proteinshaker','hydrering',
+  'gymväska','träningsväska','sportväska',
+  'tältsov','sovsäck','trekking','vandring','friluftsliv',
+  'pannlampa','klättring','kajak',
+];
+
 function isProductBlocked(product) {
   const title = (product.title || product.nameEn || product.name || '').toLowerCase();
   const text  = [product.title, product.nameEn, product.name, product.categoryName, product.description].join(' ').toLowerCase();
 
-  // Blocked keywords
+  // ── STEG 1: Hård blocklist — dessa stoppas alltid ──────────
   for (const kw of BLOCKED_KEYWORDS) {
     if (text.includes(kw)) { console.log(`⛔ Blocked keyword "${kw}": "${title}"`); return true; }
   }
 
-  // Car model names in title
+  // ── STEG 2: Bilmodeller i titel ────────────────────────────
   for (const model of CAR_MODELS) {
-    if (title.includes(model)) { console.log(`⛔ Blocked car model "${model}": "${title}"`); return true; }
+    if (title.includes(model)) { console.log(`⛔ Car model "${model}": "${title}"`); return true; }
   }
 
-  // CJ category-level blocks
+  // ── STEG 3: Blockerade CJ-kategorier ──────────────────────
   const catText = (product.categoryName || '').toLowerCase();
-  const BLOCKED_CATS = ['automobile','car care','vehicle','motor','pet','garden','home decor','furniture','beauty','cosmetic','baby','jewelry','fashion','lighting','curtain'];
+  const BLOCKED_CATS = [
+    'automobile','car care','vehicle','motor part',
+    'pet','animal','dog','cat','bird','fish','reptile',
+    'garden','lawn','outdoor decor','plant',
+    'home decor','furniture','bedding','bathroom','kitchen','lighting','curtain',
+    'beauty','cosmetic','skincare','hair care','personal care',
+    'baby','infant','toddler','children toy','kids toy',
+    'jewelry','fashion accessory','watch fashion',
+    'food','beverage','supplement health','vitamin',
+    'tool','hardware','electrical',
+    'office','stationery','school',
+    'travel bag','luggage','suitcase',
+  ];
   for (const cat of BLOCKED_CATS) {
-    if (catText.includes(cat)) { console.log(`⛔ Blocked category "${cat}": "${title}"`); return true; }
+    if (catText.includes(cat)) { console.log(`⛔ Blocked CJ category "${cat}": "${title}"`); return true; }
   }
 
-  // Title quality check — reject suspiciously short or generic titles
+  // ── STEG 4: Titel för kort ─────────────────────────────────
   if (title.length < 10) { console.log(`⛔ Title too short: "${title}"`); return true; }
 
-  // Must match niche
-  const isNicheRelevant = NICHE_KEYWORDS.some(kw => text.includes(kw));
-  if (!isNicheRelevant) { console.log(`⛔ Off-niche: "${title}"`); return true; }
+  // ── STEG 5: WHITELIST — måste matcha minst ett sport/outdoor-keyword ──
+  // Detta är grindvakten — om produkten inte aktivt bevisar sin relevans blockeras den.
+  const passesWhitelist = WHITELIST_KEYWORDS.some(kw => text.includes(kw));
+  if (!passesWhitelist) {
+    console.log(`⛔ Failed whitelist (no sport/outdoor match): "${title}"`);
+    return true;
+  }
 
   return false;
 }
