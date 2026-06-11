@@ -490,7 +490,7 @@ function isProductBlocked(product) {
 
 // Auto-publish threshold
 const AUTO_PUBLISH_SCORE = 999; // Disabled — all products go to approval queue
-const MIN_SCORE = 80;          // Products below 60 are rejected
+const MIN_SCORE = 70;          // Products below 60 are rejected
 const MAX_SHIPPING_DAYS = 21;  // Max shipping days — only used when data is available
 
 // ── ALIEXPRESS DATAHUB API (via RapidAPI) ─────────────────
