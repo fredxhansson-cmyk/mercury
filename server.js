@@ -179,7 +179,61 @@ const CATEGORY_MAP = {
   'mat': { sv: 'Utrustning & Tillbehör', tag: 'matta', shopify: 'Utrustning & Tillbehör', gender: 'unisex' },
   'rope': { sv: 'Utrustning & Tillbehör', tag: 'rep', shopify: 'Utrustning & Tillbehör', gender: 'unisex' },
 
+  // Sports & Fitness
+  'sports': { sv: 'Fitness & Hälsa', tag: 'fitness', shopify: 'Fitness & Hälsa' },
+  'fitness': { sv: 'Fitness & Hälsa', tag: 'fitness', shopify: 'Fitness & Hälsa' },
+  'exercise': { sv: 'Fitness & Hälsa', tag: 'fitness', shopify: 'Fitness & Hälsa' },
+  'yoga': { sv: 'Fitness & Hälsa', tag: 'fitness', shopify: 'Fitness & Hälsa' },
+  'outdoor': { sv: 'Fitness & Hälsa', tag: 'fitness', shopify: 'Fitness & Hälsa' },
+
+  // Beauty & Health
+  'beauty': { sv: 'Skönhet & Välmående', tag: 'skönhet', shopify: 'Skönhet & Välmående' },
+  'health': { sv: 'Skönhet & Välmående', tag: 'hälsa', shopify: 'Skönhet & Välmående' },
+  'personal care': { sv: 'Skönhet & Välmående', tag: 'skönhet', shopify: 'Skönhet & Välmående' },
+  'massage': { sv: 'Skönhet & Välmående', tag: 'välmående', shopify: 'Skönhet & Välmående' },
+  'skin': { sv: 'Skönhet & Välmående', tag: 'skönhet', shopify: 'Skönhet & Välmående' },
+
+  // Home & Garden
+  'home': { sv: 'Hem & Inredning', tag: 'hem', shopify: 'Hem & Inredning' },
+  'garden': { sv: 'Hem & Inredning', tag: 'hem', shopify: 'Hem & Inredning' },
+  'kitchen': { sv: 'Hem & Inredning', tag: 'kök', shopify: 'Hem & Inredning' },
+  'household': { sv: 'Hem & Inredning', tag: 'hem', shopify: 'Hem & Inredning' },
+  'furniture': { sv: 'Hem & Inredning', tag: 'inredning', shopify: 'Hem & Inredning' },
+  'lighting': { sv: 'Hem & Inredning', tag: 'belysning', shopify: 'Hem & Inredning' },
+
+  // Tech & Gadgets
+  'electronics': { sv: 'Tech & Gadgets', tag: 'tech', shopify: 'Tech & Gadgets' },
+  'tech': { sv: 'Tech & Gadgets', tag: 'tech', shopify: 'Tech & Gadgets' },
+  'gadget': { sv: 'Tech & Gadgets', tag: 'tech', shopify: 'Tech & Gadgets' },
+  'phone': { sv: 'Tech & Gadgets', tag: 'tech', shopify: 'Tech & Gadgets' },
+  'computer': { sv: 'Tech & Gadgets', tag: 'tech', shopify: 'Tech & Gadgets' },
+  'camera': { sv: 'Tech & Gadgets', tag: 'tech', shopify: 'Tech & Gadgets' },
+
+  // Fashion & Accessories
+  'apparel': { sv: 'Mode & Accessoarer', tag: 'mode', shopify: 'Mode & Accessoarer' },
+  'fashion': { sv: 'Mode & Accessoarer', tag: 'mode', shopify: 'Mode & Accessoarer' },
+  'clothing': { sv: 'Mode & Accessoarer', tag: 'mode', shopify: 'Mode & Accessoarer' },
+  'accessories': { sv: 'Mode & Accessoarer', tag: 'accessoarer', shopify: 'Mode & Accessoarer' },
+  'jewelry': { sv: 'Mode & Accessoarer', tag: 'smycken', shopify: 'Mode & Accessoarer' },
+  'watches': { sv: 'Mode & Accessoarer', tag: 'klockor', shopify: 'Mode & Accessoarer' },
+  'bags': { sv: 'Mode & Accessoarer', tag: 'väskor', shopify: 'Mode & Accessoarer' },
+
+  // Pets
+  'pet': { sv: 'Husdjur', tag: 'husdjur', shopify: 'Husdjur' },
+  'dog': { sv: 'Husdjur', tag: 'husdjur', shopify: 'Husdjur' },
+  'cat': { sv: 'Husdjur', tag: 'husdjur', shopify: 'Husdjur' },
+
+  // Baby & Kids
+  'baby': { sv: 'Barn & Baby', tag: 'barn', shopify: 'Barn & Baby' },
+  'kids': { sv: 'Barn & Baby', tag: 'barn', shopify: 'Barn & Baby' },
+  'toy': { sv: 'Barn & Baby', tag: 'leksaker', shopify: 'Barn & Baby' },
+
+  // Travel & Outdoor
+  'travel': { sv: 'Resor & Outdoor', tag: 'resor', shopify: 'Resor & Outdoor' },
+  'camping': { sv: 'Resor & Outdoor', tag: 'outdoor', shopify: 'Resor & Outdoor' },
+  'hiking': { sv: 'Resor & Outdoor', tag: 'outdoor', shopify: 'Resor & Outdoor' },
 };
+
 function mapCategory(rawCategory, productTitle) {
   const text = (rawCategory + ' ' + productTitle).toLowerCase();
   for (const [key, val] of Object.entries(CATEGORY_MAP)) {
@@ -241,197 +295,41 @@ async function addProductToCollection(productId, collectionName) {
 
 // ── CONTENT FILTER ────────────────────────────────────────
 const BLOCKED_KEYWORDS = [
-  // Sex / Adult
-  'vibrator','dildo','buttplug','condom',
-  'penis','vagina','anal','fetish','bdsm','lingerie sexy',
-
-  // Våld / Vapen
-  'gun','weapon','weapons','sword','knife','dagger',
-  'bullet','ammo','ammunition','firearm','pistol',
-  'rifle','grenade','crossbow','tactical','military weapon',
-
-  // Droger / Alkohol / Tobak
-  'drug','drugs','cannabis','marijuana','weed',
-  'cocaine','heroin','lsd','mushroom',
-  'whiskey','whisky','beer','wine','vodka',
-  'cigarette','tobacco','vape','e-cigarette','hookah',
-
+  // Adult/sexual
+  'sex','adult','erotic','porn','nude','vibrat','dildo','condom','penis','vagina',
+  // Weapons
+  'gun','weapon','sword','bullet','ammo','firearm','pistol','rifle','grenade',
+  // Drugs/alcohol  
+  'drug','cannabis','marijuana','cocaine','whiskey','whisky','beer','wine','vodka',
+  'cigarette','tobacco','vape','e-cigarette',
   // Gambling
-  'gambling','casino','betting','poker','slot machine',
-
-  // Piratkopior
-  'fake','replica','counterfeit','copy version','knockoff',
-
-  // Bil & Motor
-  'automobile','automotive','vehicle','motorcycle',
-  'speedometer','dashboard','windshield',
-  'car mat clip','glovebox','engine part',
-
-  // Hem & Inredning
-  'curtain','tablecloth','wall sticker',
-  'picture frame','vase','candle holder',
-  'home decor','home decoration',
-
-  // Husdjur
+  'gambling','casino','betting',
+  // Fakes
+  'fake','replica','counterfeit',
+  // Car/auto parts (not relevant)
+  'speedometer','glovebox','car mat clip','windshield','dashboard clip',
+  // Home decor (not our niche)
+  'curtain','tablecloth','wall sticker','picture frame','vase','candle holder',
+  // Pet clothing
   'pet dress','dog dress','cat costume',
-  'pet clothes','pet clothing',
-
-  // Beauty / Hudvård
-  'beauty','skincare','skin care',
-  'facial','face patch','face patches',
-  'face mask','anti aging','anti-aging',
-  'wrinkle','wrinkles','serum','cleanser',
-  'lip balm','lipstick','mascara',
-  'foundation','eyeshadow','nail polish',
-  'eyelash','cosmetic','cosmetics',
-  'makeup','make-up','skin treatment',
-
-  // Smycken / Mode utanför sport
-  'jewelry','necklace','earring','bracelet',
-  'earring','luxury watch','wedding dress',
-  'evening dress','tuxedo','high heel','stiletto',
-
-  // Barnprodukter vi inte vill sälja
-  'baby bottle','baby diaper','pacifier',
-
-  // Elektronik utanför sport
-  'gaming keyboard','gaming mouse',
-  'led strip','phone case','tablet case'
+  // Beauty/makeup (not our niche unless recovery/health)
+  'lipstick','mascara','foundation','eyeshadow','nail polish','eyelash',
+  // Fashion accessories (not sport)
+  'high heel','stiletto','evening dress','wedding dress','tuxedo',
 ];
 
 // Niche validation — product must relate to at least one of these
 const NICHE_KEYWORDS = [
-
-  // Gym & Fitness
-  'gym',
-  'fitness',
-  'workout',
-  'training',
-  'exercise',
-  'crossfit',
-  'weightlifting',
-  'strength training',
-  'resistance bands',
-  'pull up bar',
-  'ab roller',
-  'jump rope',
-  'gym gloves',
-  'weightlifting belt',
-
-  // Running
-  'running',
-  'runner',
-  'running shoes',
-  'trail running',
-  'road running',
-  'running jacket',
-  'running shorts',
-  'hydration vest',
-
-  // Outdoor
-  'outdoor',
-  'camping',
-  'hiking',
-  'trekking',
-  'hiking boots',
-  'trekking poles',
-  'sleeping bag',
-  'camping stove',
-  'camping tent',
-  'outdoor backpack',
-  'water filter',
-
-  // Cycling
-  'cycling',
-  'cyclist',
-  'bike helmet',
-  'cycling jersey',
-  'cycling shorts',
-  'cycling gloves',
-  'cycling computer',
-
-  // Recovery
-  'recovery',
-  'foam roller',
-  'massage gun',
-  'compression',
-  'compression sleeve',
-  'knee brace',
-  'ankle support',
-  'back stretcher',
-  'muscle recovery',
-
-  // Sport Tech
-  'fitness tracker',
-  'heart rate monitor',
-  'gps watch',
-  'sports earbuds',
-  'running headphones',
-  'smartwatch sport',
-  'bone-conduction',
-  'neckband headphones',
-  'smart glasses',
-  'ai glasses',
-  'bluetooth headphones',
-  'wireless headphones',
-  'open ear',
-  'smartwatch',
-  'smart watch',
-  'smart ring',
-  'gps',
-  'gps navigation',
-  'outdoor gps',
-  'action camera',
-  'action cam',
-  'sports camera',
-  'cycling computer',
-  'bike computer',
-  'heart rate strap',
-  'heart rate',
-  'fitness watch',
-  'sport watch',
-  'running watch',
-  'triathlon watch',
-  'trail running watch',
-  'bone conduction',
-  'open ear headphones',
-  'wireless sports headphones',
-  'bluetooth sports earbuds',
-  'sports earbuds wireless',
-  'headlamp',
-  'led headlamp',
-  'usb headlamp',
-  'helmet camera',
-  'bike camera',
-  'cadence sensor',
-  'speed sensor',
-  'bike radar',
-  'portable power station',
-  'power bank',
-  'solar charger',
-  'solar power bank',
-
-  // Apparel
-  'training shorts',
-  'compression shirt',
-  'gym hoodie',
-  'running tights',
-  'athletic socks',
-  'thermal base layer',
-  'sportswear',
-  'athletic wear',
-
-  // Swedish
-  'träning',
-  'fitness',
-  'gym',
-  'löpning',
-  'vandring',
-  'friluftsliv',
-  'cykling',
-  'återhämtning',
-  'sportkläder',
-  'träningskläder'
+  'sport','fitness','gym','workout','training','exercise','running','hiking',
+  'cycling','yoga','outdoor','camping','recovery','health','wellness',
+  'compression','resistance','muscle','cardio','athletic','active',
+  'trail','trekking','climbing','swimming','rowing','crossfit',
+  'stretching','mobility','flexibility','strength','endurance',
+  'nutrition','hydration','protein','supplement','electrolyte',
+  'smartwatch','gps','heart rate','tracker','monitor','sensor',
+  'waterproof','windproof','thermal','breathable','lightweight',
+  'löpning','träning','friluftsliv','vandring','cykling','återhämtning',
+  'sport','fitness','gym','hälsa','wellness','aktiv',
 ];
 
 function isProductBlocked(product) {
@@ -457,7 +355,7 @@ function isProductBlocked(product) {
   }
 
   // Block car brands
-  const carBrands = ['ford ','toyota ','honda ','bmw ','mercedes ','audi ','volkswagen ','dodge ','pontiac ','chevrolet ','gmc ','cadillac ','jeep ','chrysler ','ram ','nissan ','mazda ','kia ','hyundai ','volvo ','saab ','peugeot ','renault '];
+  const carBrands = ['ford ','toyota ','honda ','bmw ','mercedes ','audi ','volkswagen '];
   for (const brand of carBrands) {
     if (text.includes(brand)) {
       console.log(`⛔ Blocked car brand: "${product.title||product.nameEn}"`);
@@ -476,9 +374,9 @@ function isProductBlocked(product) {
 }
 
 // Auto-publish threshold
-const AUTO_PUBLISH_SCORE = 80; // Disabled — all products go to approval queue
+const AUTO_PUBLISH_SCORE = 999; // Disabled — all products go to approval queue
 const MIN_SCORE = 60;          // Products below 60 are rejected
-const MAX_SHIPPING_DAYS = 15;  // Max shipping days — only used when data is available
+const MAX_SHIPPING_DAYS = 21;  // Max shipping days — only used when data is available
 
 // ── ALIEXPRESS DATAHUB API (via RapidAPI) ─────────────────
 let aliExpressDisabled = false; // Auto-disable if quota exceeded
@@ -567,7 +465,7 @@ async function getCJToken() {
   return null;
 }
 
-async function searchCJProducts(token, keyword, limit = 20, retries = 3) {
+async function searchCJProducts(token, keyword, limit = 20) {
   try {
     const res = await axios.get('https://developers.cjdropshipping.com/api2.0/v1/product/list', {
       headers: { 'CJ-Access-Token': token },
@@ -577,113 +475,25 @@ async function searchCJProducts(token, keyword, limit = 20, retries = 3) {
     console.log(`CJ "${keyword}": ${list.length} results (msg: ${res.data?.message})`);
     return list;
   } catch(e) {
-  if (e.response?.data?.code === 1600200) {
-    console.log("CJ daily quota exhausted");
+    if (e.response?.status === 429) {
+      console.error('CJ rate limit hit — waiting...');
+    } else {
+      console.error('CJ search failed:', e.response?.status, e.message);
+    }
     return [];
   }
-    console.error("CJ ERROR STATUS:", e.response?.status);
-    console.error("CJ ERROR DATA:", JSON.stringify(e.response?.data, null, 2));
-    console.error("CJ ERROR MESSAGE:", e.message);
-    return [];
-  }  
 }
 
 function scoreCJProduct(product, index) {
-  let score = 40;
-
-  const text = [
-    product.nameEn,
-    product.name,
-    product.categoryName,
-    product.description
-  ].join(' ').toLowerCase();
-
-  // Pris
+  let score = 50; // Base score — CJ products are pre-vetted
   const price = parseFloat(product.sellPrice) || 10;
-  if (price >= 5 && price <= 80) score += 20;
-
-  // Ordrar
+  if (price >= 1 && price <= 100) score += 15;
   const orders = parseInt(product.orderCount) || 0;
   score += Math.min(20, orders / 50);
-
-  // Bilder
   const imgs = (product.productImageSet || []).length;
   score += Math.min(10, imgs * 2);
-
-  // Prioriterade Meloni-kategorier
-  const premiumKeywords = [
-    'running shoes',
-    'trail running',
-    'gym shoes',
-    'training shoes',
-    'hiking boots',
-    'outdoor backpack',
-    'gym bag',
-    'compression',
-    'massage gun',
-    'foam roller',
-    'cycling jersey',
-    'cycling shorts',
-    'fitness tracker',
-    'heart rate monitor',
-    'fitness tracker',
-    'gps watch',
-    'heart rate monitor',
-    'smartwatch sport',
-  'bone-conduction',
-  'neckband headphones',
-  'smart glasses',
-  'ai glasses',
-  'bluetooth headphones',
-  'wireless headphones',
-  'open ear',
-    'sports earbuds',
-    'running headphones',
-    'cycling computer',
-    'action camera',
-    'solar charger outdoor',
-    'bone conduction headphones'
-  ];
-
-  const goodKeywords = [
-    'running',
-    'training',
-    'fitness',
-    'gym',
-    'hiking',
-    'trekking',
-    'camping',
-    'cycling',
-    'recovery',
-    'sportswear'
-  ];
-
-  const weakKeywords = [
-    'casual',
-    'fashion',
-    'lifestyle',
-    'daily wear',
-    'streetwear',
-    'sandals',
-    'sneakers'
-  ];
-
-  premiumKeywords.forEach(k => {
-    if (text.includes(k)) score += 15;
-  });
-
-  goodKeywords.forEach(k => {
-    if (text.includes(k)) score += 5;
-  });
-
-  weakKeywords.forEach(k => {
-    if (text.includes(k)) score -= 10;
-  });
-
-  // Rank bonus
   score += Math.max(0, 10 - index);
-
-  return Math.max(0, Math.min(100, Math.round(score)));
+  return Math.min(100, Math.round(score));
 }
 
 // ── SHOPIFY API ────────────────────────────────────────────
@@ -861,154 +671,29 @@ function scoreProduct(product, index) {
 
 // ── TREND KEYWORDS ─────────────────────────────────────────
 const TREND_KEYWORDS = [
-
-  // ── HERR ─────────────────────────────
-  'men running jacket',
-  'men gym hoodie',
-  'men training shorts',
-  'men compression shirt',
-  'men hiking pants',
-  'men running shoes',
-  'men trail running shoes',
-  'men gym shoes',
-  'men thermal base layer',
-  'men athletic socks',
-
-  // ── DAM ──────────────────────────────
-  'women running jacket',
-  'women gym hoodie',
-  'women training shorts',
-  'women running tights',
-  'women compression leggings',
-  'women running shoes',
-  'women trail running shoes',
-  'women gym shoes',
-  'women thermal base layer',
-  'women athletic socks',
-
-  // ── GYM & FITNESS ────────────────────
-  'resistance bands',
-  'pull up bar',
-  'ab roller',
-  'jump rope',
-  'gym gloves',
-  'weightlifting belt',
-  'fitness tracker',
-  'heart rate monitor',
-  'gym bag',
-  'protein shaker',
-
-  // ── LÖPNING ──────────────────────────
-  'running hydration vest',
-  'running belt',
-  'running cap',
-  'road running shoes',
-  'trail running shoes',
-  'running backpack',
-
-  // ── OUTDOOR ──────────────────────────
-  'hiking boots',
-  'trekking poles',
-  'camping tent',
-  'sleeping bag',
-  'outdoor backpack',
-  'waterproof jacket',
-  'camping stove',
-  'water filter outdoor',
-  'camping lantern',
-  'camping cookware',
-
-  // ── CYKLING ──────────────────────────
-  'bike helmet',
-  'cycling gloves',
-  'cycling jersey',
-  'cycling shorts',
-  'cycling backpack',
-  'cycling computer',
-
-  // ── RECOVERY ─────────────────────────
-  'massage gun',
-  'foam roller',
-  'knee brace support',
-  'back stretcher',
-  'compression sleeve',
-  'ankle support',
-  'muscle roller stick',
-
-// ── SMART SPORT TECH ─────────────────
-'gps watch',
-'running headphones',
-'sports earbuds wireless',
-'action camera',
-'solar charger outdoor',
-'bone conduction headphones',
-'cycling computer',
-'bike computer',
-'sport watch',
-'running watch',
-'fitness watch',
-'outdoor gps',
-'solar charger',
-'headlamp',
-'smart ring',
-'smartwatch',
-'smartwatch gps',
-'fitness smartwatch',
-'gps running watch',
-'triathlon watch',
-'trail running watch',
-'cycling gps',
-'gps cycling computer',
-'heart rate strap',
-'chest heart rate monitor',
-'fitness band',
-'sleep tracker',
-'recovery tracker',
-'smart scale',
-'body composition scale',
-'wireless sports headphones',
-'bluetooth sports earbuds',
-'waterproof earbuds',
-'open ear headphones',
-'action cam',
-'action cam 4k',
-'helmet camera',
-'sports camera',
-'portable power station',
-'camping power bank',
-'solar power bank',
-'portable solar charger',
-'led headlamp',
-'usb headlamp',
-'camping flashlight',
-'bike gps',
-'bike radar',
-'bike camera',
-'cycling sensor',
-'cadence sensor',
-'speed sensor bike',
-'weighted vest',
-'wrist wraps',
-'lifting straps',
-'squat pad',
-'workout towel',
-'ice bath',
-'ice bath tub',
-'recovery sandals',
-'posture corrector',
-'neck massager',
-'running sunglasses',
-'reflective vest',
-'running socks',
-'carbon running shoes',
-'camping chair',
-'camping table',
-'emergency radio',
-'survival flashlight',
-'bike phone mount',
-'bike repair kit',
-'bike pump',
-'bike bottle cage',
+  // Träning & Fitness
+  'resistance bands', 'massage gun', 'foam roller', 'pull up bar',
+  'jump rope', 'gym gloves', 'weightlifting belt', 'ab roller',
+  'fitness tracker', 'smartwatch sport', 'heart rate monitor',
+  'yoga mat', 'yoga block', 'workout leggings', 'sports bra high support',
+  'compression socks', 'gym bag', 'water bottle insulated',
+  'protein shaker', 'gym shoes men', 'running shoes women',
+  // Friluftsliv & Outdoor
+  'hiking boots', 'trekking poles', 'camping headlamp',
+  'sleeping bag', 'outdoor backpack', 'waterproof jacket',
+  'trail running shoes', 'cycling gloves', 'bike helmet',
+  'carabiner', 'camping stove', 'water filter outdoor',
+  // Återhämtning & Hälsa
+  'knee brace support', 'back stretcher', 'posture corrector',
+  'acupressure mat', 'ice pack recovery', 'compression sleeve',
+  'ankle support', 'elbow brace', 'muscle roller stick',
+  'sleep mask', 'eye mask heated', 'neck massager',
+  // Smart Teknik sport
+  'running headphones', 'sports earbuds wireless', 'gps watch',
+  'cycling computer', 'action camera', 'solar charger outdoor',
+  // Kost & Vätska  
+  'meal prep container', 'supplement organizer', 'blender bottle',
+  'electrolyte powder', 'energy gel', 'hydration vest',
 ];
 
 // ── MAIN RESEARCH PIPELINE ─────────────────────────────────
@@ -1021,7 +706,7 @@ async function runProductResearch() {
   try {
     const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
   const delay = ms => new Promise(r => setTimeout(r, ms));
-  const keywords = shuffle(TREND_KEYWORDS).slice(0, 20);
+    const keywords = shuffle(TREND_KEYWORDS).slice(0, 3);
     console.log('Researching keywords:', keywords);
 
     let candidates = [];
@@ -1050,9 +735,9 @@ async function runProductResearch() {
       console.log('Searching CJ Dropshipping...');
       const cjToken = await getCJToken();
       if (cjToken) {
-      const cjKeywords = shuffle(TREND_KEYWORDS).slice(0, 20);
+        const cjKeywords = shuffle(TREND_KEYWORDS).slice(0, 3);
         for (const keyword of cjKeywords) {
-          await delay(5000); // 2s between CJ requests to avoid rate limits
+          await delay(2000); // 2s between CJ requests to avoid rate limits
           const products = await searchCJProducts(cjToken, keyword, 10);
           store.stats.totalScanned += products.length;
           products.forEach((p, i) => {
@@ -1087,7 +772,7 @@ async function runProductResearch() {
 
     // Sort by score, take top 5
     candidates.sort((a, b) => b.score - a.score);
-    const top = candidates.slice(0, 300);
+    const top = candidates.slice(0, 20);
 
     console.log(`Found ${candidates.length} candidates, processing top ${top.length}`);
 
@@ -1103,20 +788,14 @@ async function runProductResearch() {
       const idExists = [...store.queue, ...store.products].find(
         p => p.aliId === String(product.itemId||product.productId||product.pid)
       );
-     if (idExists) {
-  console.log(`⛔ Duplicate ID: ${product.title || product.nameEn}`);
-  continue;
-}
+      if (idExists) continue;
 
       // Skip if very similar title already in queue (duplicate from different source)
       const productTitle = (product.title||product.nameEn||'').toLowerCase().slice(0,30);
       const titleExists = productTitle.length > 5 && [...store.queue, ...store.products].find(
         p => p.rawTitle?.toLowerCase().slice(0,30) === productTitle
       );
-     if (titleExists) {
-  console.log(`⛔ Duplicate Title: ${product.title || product.nameEn}`);
-  continue;
-}
+      if (titleExists) continue;
 
       try {
         // Get full product details + images
@@ -1188,13 +867,6 @@ async function runProductResearch() {
           categoryName: product.productType || product.categoryName || product.category || 'General'
         });
         const content = parseGeneratedContent(rawContent);
-
-        // Reject low-score products
-if (product.score < MIN_SCORE) {
-  console.log(`⛔ Low score: "${product.title || product.nameEn}" (${product.score})`);
-  store.stats.totalRejected++;
-  continue;
-}
 
         const queueItem = {
           id: `q_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
@@ -1656,96 +1328,73 @@ app.get('/api/create-collections', async (req, res) => {
   if (!domain || !token) return res.status(500).json({ error: 'Shopify not configured' });
 
   const COLLECTIONS = [
-  // ── TOPPNIVÅ ─────────────────────────────
-  { title: 'Nyheter', handle: 'nyheter', sort: 'created-descending' },
-  { title: 'Bästsäljare', handle: 'bestsellers', sort: 'best-selling' },
-  { title: 'Rea', handle: 'rea', sort: 'price-descending' },
+    // Toppnivå
+    { title: 'Nyheter',      handle: 'nyheter',      sort: 'created-descending' },
+    { title: 'Bästsäljare',  handle: 'bestsellers',  sort: 'best-selling' },
+    { title: 'Rea',          handle: 'rea',           sort: 'price-descending' },
+    // Kön
+    { title: 'Herr', handle: 'herr' },
+    { title: 'Dam',  handle: 'dam' },
+    { title: 'Barn', handle: 'barn' },
+    // Herr kläder
+    { title: 'Herr T-shirts',                handle: 'herr-t-shirts' },
+    { title: 'Herr Linnen',                  handle: 'herr-linnen' },
+    { title: 'Herr Hoodies och Sweatshirts', handle: 'herr-hoodies' },
+    { title: 'Herr Funktionskläder',         handle: 'herr-funktionskl-der' },
+    { title: 'Herr Kompressionskläder',      handle: 'herr-kompressionskl-der' },
+    { title: 'Herr Shorts',                  handle: 'herr-shorts' },
+    { title: 'Herr Byxor och Joggers',       handle: 'herr-byxor' },
+    { title: 'Herr Jackor',                  handle: 'herr-jackor' },
+    { title: 'Herr Underställ',              handle: 'herr-underst-ll' },
+    { title: 'Herr Strumpor och Underkläder',handle: 'herr-strumpor' },
+    // Herr skor
+    { title: 'Herr Löparskor',       handle: 'herr-loparskor' },
+    { title: 'Herr Träningsskor',    handle: 'herr-traningsskor' },
+    { title: 'Herr Trailskor',       handle: 'herr-trailskor' },
+    { title: 'Herr Vandringskängor', handle: 'herr-vandring' },
+    { title: 'Herr Sandaler',        handle: 'herr-sandaler' },
+    // Dam kläder
+    { title: 'Dam T-shirts och Linnen',     handle: 'dam-t-shirts' },
+    { title: 'Dam Hoodies och Sweatshirts', handle: 'dam-hoodies' },
+    { title: 'Dam Funktionskläder',         handle: 'dam-funktionskl-der' },
+    { title: 'Dam Kompressionskläder',      handle: 'dam-kompressionskl-der' },
+    { title: 'Dam Shorts och Tights',       handle: 'dam-shorts' },
+    { title: 'Dam Byxor och Leggings',      handle: 'dam-byxor' },
+    { title: 'Dam Jackor',                  handle: 'dam-jackor' },
+    { title: 'Dam Underställ',              handle: 'dam-underst-ll' },
+    // Sport-BH
+    { title: 'Sport-BH Lätt Support',   handle: 'sport-bh-latt' },
+    { title: 'Sport-BH Medium Support', handle: 'sport-bh-medium' },
+    { title: 'Sport-BH Hög Support',    handle: 'sport-bh-hog' },
+    // Dam skor
+    { title: 'Dam Löparskor',       handle: 'dam-loparskor' },
+    { title: 'Dam Träningsskor',    handle: 'dam-traningsskor' },
+    { title: 'Dam Vandringskängor', handle: 'dam-vandring' },
+    // Barn kläder
+    { title: 'Barn T-shirts och Hoodies',  handle: 'barn-t-shirts' },
+    { title: 'Barn Shorts och Byxor',      handle: 'barn-shorts' },
+    { title: 'Barn Jackor och Regnkläder', handle: 'barn-jackor' },
+    { title: 'Barn Outdoorkläder',         handle: 'barn-outdoor' },
+    { title: 'Barn Underställ',            handle: 'barn-underst-ll' },
+    // Barn skor
+    { title: 'Barn Löparskor',       handle: 'barn-loparskor' },
+    { title: 'Barn Träningsskor',    handle: 'barn-traningsskor' },
+    { title: 'Barn Outdoorskor',     handle: 'barn-outdoorskor' },
+    { title: 'Barn Vandringskängor', handle: 'barn-vandring' },
+    // Sport
+    { title: 'Träning och Fitness',     handle: 'traning-fitness' },
+    { title: 'Friluftsliv och Outdoor', handle: 'friluftsliv-outdoor' },
+    { title: 'Löpning',                 handle: 'lopning' },
+    { title: 'Yoga',                    handle: 'yoga' },
+    { title: 'Cykling',                 handle: 'cykling' },
+    { title: 'Vandring och Camping',    handle: 'vandring' },
+    { title: 'Smart Teknik',            handle: 'smart-teknik' },
+    { title: 'Aterhamtning och Halsa',  handle: 'aterhämtning-halsa' },
+    { title: 'Kost och Vatska',         handle: 'kost-vatska' },
+    { title: 'Utrustning och Tillbehor',handle: 'utrustning-tillbehor' },
+    { title: 'Livsstil',                handle: 'livsstil' },
+  ];
 
-  // ── KÖN ─────────────────────────────────
-  { title: 'Herr', handle: 'herr' },
-  { title: 'Dam', handle: 'dam' },
-  { title: 'Barn', handle: 'barn' },
-
-  // ── HUVUDKATEGORIER ─────────────────────
-  { title: 'Träning & Fitness', handle: 'traning-fitness' },
-  { title: 'Löpning', handle: 'lopning' },
-  { title: 'Outdoor & Camping', handle: 'outdoor-camping' },
-  { title: 'Vandring', handle: 'vandring' },
-  { title: 'Cykling', handle: 'cykling' },
-  { title: 'Yoga & Pilates', handle: 'yoga-pilates' },
-  { title: 'Smart Tech', handle: 'smart-tech' },
-  { title: 'Återhämtning & Hälsa', handle: 'recovery-health' },
-  { title: 'Kost & Hydrering', handle: 'kost-hydrering' },
-  { title: 'Utrustning & Tillbehör', handle: 'utrustning-tillbehor' },
-  { title: 'Sportlivsstil', handle: 'sportlivsstil' },
-
-  // ── SMART TECH ──────────────────────────
-  { title: 'Smartklockor', handle: 'smartklockor' },
-  { title: 'Aktivitetsarmband', handle: 'aktivitetsarmband' },
-  { title: 'Pulsmätare', handle: 'pulsmatare' },
-  { title: 'Sporthörlurar', handle: 'sporthorlurar' },
-  { title: 'Cykeldatorer', handle: 'cykeldatorer' },
-  { title: 'Actionkameror', handle: 'actionkameror' },
-  { title: 'GPS & Navigation', handle: 'gps-navigation' },
-  { title: 'Belysning', handle: 'belysning' },
-  { title: 'Laddning & Powerbanks', handle: 'powerbanks' },
-
-  // ── LÖPNING ─────────────────────────────
-  { title: 'Löparskor', handle: 'loparskor' },
-  { title: 'Trail Running', handle: 'trail-running' },
-  { title: 'Löparkläder', handle: 'loparklader' },
-  { title: 'Hydrering för löpning', handle: 'lopning-hydrering' },
-  { title: 'Löpartillbehör', handle: 'lopning-tillbehor' },
-
-  // ── FITNESS ─────────────────────────────
-  { title: 'Hemmagym', handle: 'hemmagym' },
-  { title: 'Styrketräning', handle: 'styrketraning' },
-  { title: 'Funktionell Träning', handle: 'funktionell-traning' },
-  { title: 'Kondition', handle: 'kondition' },
-  { title: 'Mobility & Stretch', handle: 'mobility-stretch' },
-
-  // ── OUTDOOR ─────────────────────────────
-  { title: 'Ryggsäckar', handle: 'ryggsackar' },
-  { title: 'Tält', handle: 'talt' },
-  { title: 'Sovutrustning', handle: 'sovutrustning' },
-  { title: 'Campingkök', handle: 'campingkok' },
-  { title: 'Vattenrening', handle: 'vattenrening' },
-  { title: 'Friluftsverktyg', handle: 'friluftsverktyg' },
-
-  // ── CYKLING ─────────────────────────────
-  { title: 'Cykelhjälmar', handle: 'cykelhjalmar' },
-  { title: 'Cykelkläder', handle: 'cykelklader' },
-  { title: 'Cykelbelysning', handle: 'cykelbelysning' },
-  { title: 'Cykelväskor', handle: 'cykelvaskor' },
-  { title: 'Cykeltillbehör', handle: 'cykeltillbehor' },
-
-  // ── YOGA ────────────────────────────────
-  { title: 'Yogamattor', handle: 'yogamattor' },
-  { title: 'Yogablock', handle: 'yogablock' },
-  { title: 'Pilates', handle: 'pilates' },
-  { title: 'Meditation', handle: 'meditation' },
-
-  // ── RECOVERY ────────────────────────────
-  { title: 'Massage', handle: 'massage' },
-  { title: 'Kompression', handle: 'kompression' },
-  { title: 'Stöd & Skydd', handle: 'stod-skydd' },
-  { title: 'Stretching', handle: 'stretching' },
-  { title: 'Kyl & Värme', handle: 'kyl-varme' },
-
-  // ── KLÄDER ──────────────────────────────
-  { title: 'Funktionskläder Herr', handle: 'herr-funktionsklader' },
-  { title: 'Funktionskläder Dam', handle: 'dam-funktionsklader' },
-  { title: 'Kompressionskläder Herr', handle: 'herr-kompression' },
-  { title: 'Kompressionskläder Dam', handle: 'dam-kompression' },
-  { title: 'Sport-BH', handle: 'sport-bh' },
-
-  // ── SKOR ────────────────────────────────
-  { title: 'Träningsskor', handle: 'traningsskor' },
-  { title: 'Löparskor', handle: 'loparskor' },
-  { title: 'Trailskor', handle: 'trailskor' },
-  { title: 'Vandringskängor', handle: 'vandringskangor' },
-  { title: 'Sandaler', handle: 'sandaler' },
-];
   const results = { created: [], existing: [], failed: [] };
   const delay = ms => new Promise(r => setTimeout(r, ms));
 
@@ -1803,13 +1452,10 @@ app.listen(PORT, async () => {
     app.use('/track', trackingRoutes(db));
     console.log('✓ Tracking routes mounted at /track');
   }
-  // Temporarily disabled until scoring is migrated to PostgreSQL
-/*
-if (startScoreCron && db) {
-  startScoreCron(db);
-  console.log('✓ Score cron started');
-}
-*/
+  if (startScoreCron && db) {
+    startScoreCron(db);
+    console.log('✓ Score cron started');
+  }
   console.log(`Mercury Backend running on port ${PORT}`);
   console.log('Shopify:', process.env.SHOPIFY_DOMAIN || 'NOT SET');
   console.log('OpenAI:', process.env.OPENAI_API_KEY ? 'SET' : 'NOT SET');
