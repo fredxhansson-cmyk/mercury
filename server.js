@@ -179,61 +179,7 @@ const CATEGORY_MAP = {
   'mat': { sv: 'Utrustning & Tillbehör', tag: 'matta', shopify: 'Utrustning & Tillbehör', gender: 'unisex' },
   'rope': { sv: 'Utrustning & Tillbehör', tag: 'rep', shopify: 'Utrustning & Tillbehör', gender: 'unisex' },
 
-  // Sports & Fitness
-  'sports': { sv: 'Fitness & Hälsa', tag: 'fitness', shopify: 'Fitness & Hälsa' },
-  'fitness': { sv: 'Fitness & Hälsa', tag: 'fitness', shopify: 'Fitness & Hälsa' },
-  'exercise': { sv: 'Fitness & Hälsa', tag: 'fitness', shopify: 'Fitness & Hälsa' },
-  'yoga': { sv: 'Fitness & Hälsa', tag: 'fitness', shopify: 'Fitness & Hälsa' },
-  'outdoor': { sv: 'Fitness & Hälsa', tag: 'fitness', shopify: 'Fitness & Hälsa' },
-
-  // Beauty & Health
-  'beauty': { sv: 'Skönhet & Välmående', tag: 'skönhet', shopify: 'Skönhet & Välmående' },
-  'health': { sv: 'Skönhet & Välmående', tag: 'hälsa', shopify: 'Skönhet & Välmående' },
-  'personal care': { sv: 'Skönhet & Välmående', tag: 'skönhet', shopify: 'Skönhet & Välmående' },
-  'massage': { sv: 'Skönhet & Välmående', tag: 'välmående', shopify: 'Skönhet & Välmående' },
-  'skin': { sv: 'Skönhet & Välmående', tag: 'skönhet', shopify: 'Skönhet & Välmående' },
-
-  // Home & Garden
-  'home': { sv: 'Hem & Inredning', tag: 'hem', shopify: 'Hem & Inredning' },
-  'garden': { sv: 'Hem & Inredning', tag: 'hem', shopify: 'Hem & Inredning' },
-  'kitchen': { sv: 'Hem & Inredning', tag: 'kök', shopify: 'Hem & Inredning' },
-  'household': { sv: 'Hem & Inredning', tag: 'hem', shopify: 'Hem & Inredning' },
-  'furniture': { sv: 'Hem & Inredning', tag: 'inredning', shopify: 'Hem & Inredning' },
-  'lighting': { sv: 'Hem & Inredning', tag: 'belysning', shopify: 'Hem & Inredning' },
-
-  // Tech & Gadgets
-  'electronics': { sv: 'Tech & Gadgets', tag: 'tech', shopify: 'Tech & Gadgets' },
-  'tech': { sv: 'Tech & Gadgets', tag: 'tech', shopify: 'Tech & Gadgets' },
-  'gadget': { sv: 'Tech & Gadgets', tag: 'tech', shopify: 'Tech & Gadgets' },
-  'phone': { sv: 'Tech & Gadgets', tag: 'tech', shopify: 'Tech & Gadgets' },
-  'computer': { sv: 'Tech & Gadgets', tag: 'tech', shopify: 'Tech & Gadgets' },
-  'camera': { sv: 'Tech & Gadgets', tag: 'tech', shopify: 'Tech & Gadgets' },
-
-  // Fashion & Accessories
-  'apparel': { sv: 'Mode & Accessoarer', tag: 'mode', shopify: 'Mode & Accessoarer' },
-  'fashion': { sv: 'Mode & Accessoarer', tag: 'mode', shopify: 'Mode & Accessoarer' },
-  'clothing': { sv: 'Mode & Accessoarer', tag: 'mode', shopify: 'Mode & Accessoarer' },
-  'accessories': { sv: 'Mode & Accessoarer', tag: 'accessoarer', shopify: 'Mode & Accessoarer' },
-  'jewelry': { sv: 'Mode & Accessoarer', tag: 'smycken', shopify: 'Mode & Accessoarer' },
-  'watches': { sv: 'Mode & Accessoarer', tag: 'klockor', shopify: 'Mode & Accessoarer' },
-  'bags': { sv: 'Mode & Accessoarer', tag: 'väskor', shopify: 'Mode & Accessoarer' },
-
-  // Pets
-  'pet': { sv: 'Husdjur', tag: 'husdjur', shopify: 'Husdjur' },
-  'dog': { sv: 'Husdjur', tag: 'husdjur', shopify: 'Husdjur' },
-  'cat': { sv: 'Husdjur', tag: 'husdjur', shopify: 'Husdjur' },
-
-  // Baby & Kids
-  'baby': { sv: 'Barn & Baby', tag: 'barn', shopify: 'Barn & Baby' },
-  'kids': { sv: 'Barn & Baby', tag: 'barn', shopify: 'Barn & Baby' },
-  'toy': { sv: 'Barn & Baby', tag: 'leksaker', shopify: 'Barn & Baby' },
-
-  // Travel & Outdoor
-  'travel': { sv: 'Resor & Outdoor', tag: 'resor', shopify: 'Resor & Outdoor' },
-  'camping': { sv: 'Resor & Outdoor', tag: 'outdoor', shopify: 'Resor & Outdoor' },
-  'hiking': { sv: 'Resor & Outdoor', tag: 'outdoor', shopify: 'Resor & Outdoor' },
 };
-
 function mapCategory(rawCategory, productTitle) {
   const text = (rawCategory + ' ' + productTitle).toLowerCase();
   for (const [key, val] of Object.entries(CATEGORY_MAP)) {
