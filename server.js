@@ -549,7 +549,7 @@ async function getCJToken() {
     }
   }
   // Fallback to email/password
-  if (process.env.CJ_API_KEY || (process.env.CJ_EMAIL && process.env.CJ_PASSWORD)) {
+  if (process.env.CJ_EMAIL && process.env.CJ_PASSWORD) {
     try {
       const res = await axios.post('https://developers.cjdropshipping.com/api2.0/v1/authentication/getAccessToken', {
         email: process.env.CJ_EMAIL,
@@ -567,7 +567,7 @@ async function getCJToken() {
   return null;
 }
 
-async function searchCJProducts(token, keyword, limit = 20) {
+async function searchCJProducts(token, keyword, limit = 20, retries = 3)
   try {
     const res = await axios.get('https://developers.cjdropshipping.com/api2.0/v1/product/list', {
       headers: { 'CJ-Access-Token': token },
@@ -580,7 +580,10 @@ async function searchCJProducts(token, keyword, limit = 20) {
   if (e.response?.status === 429) {
   console.error('CJ rate limit hit — waiting 10s...');
   await new Promise(r => setTimeout(r, 10000));
-  return searchCJProducts(token, keyword, limit);
+  if (retries > 0) {
+  return searchCJProducts(token, keyword, limit, retries - 1);
+}
+return [];
 } else {
       console.error('CJ search failed:', e.response?.status, e.message);
     }
@@ -1046,7 +1049,7 @@ async function runProductResearch() {
     }
 
     // ── SOURCE 2: CJ Dropshipping ──
-    if (process.env.CJ_API_KEY || (process.env.CJ_EMAIL && process.env.CJ_PASSWORD)) {
+    if (process.env.CJ_EMAIL && process.env.CJ_PASSWORD) {
       console.log('Searching CJ Dropshipping...');
       const cjToken = await getCJToken();
       if (cjToken) {
