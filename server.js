@@ -636,7 +636,17 @@ function scoreCJProduct(product, index) {
     'cycling jersey',
     'cycling shorts',
     'fitness tracker',
-    'heart rate monitor'
+    'heart rate monitor',
+    'fitness tracker',
+    'gps watch',
+    'heart rate monitor',
+    'smartwatch sport',
+    'sports earbuds',
+    'running headphones',
+    'cycling computer',
+    'action camera',
+    'solar charger outdoor',
+    'bone conduction headphones'
   ];
 
   const goodKeywords = [
@@ -929,12 +939,22 @@ const TREND_KEYWORDS = [
   'ankle support',
   'muscle roller stick',
 
-  // ── SMART SPORT TECH ─────────────────
-  'gps watch',
-  'running headphones',
-  'sports earbuds wireless',
-  'action camera',
-  'solar charger outdoor'
+// ── SMART SPORT TECH ─────────────────
+'gps watch',
+'running headphones',
+'sports earbuds wireless',
+'action camera',
+'solar charger outdoor',
+'bone conduction headphones',
+'cycling computer',
+'bike computer',
+'sport watch',
+'running watch',
+'fitness watch',
+'outdoor gps',
+'solar charger',
+'headlamp',
+'smart ring'
 ];
 
 // ── MAIN RESEARCH PIPELINE ─────────────────────────────────
