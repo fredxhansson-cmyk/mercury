@@ -577,9 +577,11 @@ async function searchCJProducts(token, keyword, limit = 20) {
     console.log(`CJ "${keyword}": ${list.length} results (msg: ${res.data?.message})`);
     return list;
   } catch(e) {
-    if (e.response?.status === 429) {
-      console.error('CJ rate limit hit — waiting...');
-    } else {
+  if (e.response?.status === 429) {
+  console.error('CJ rate limit hit — waiting 10s...');
+  await new Promise(r => setTimeout(r, 10000));
+  return searchCJProducts(token, keyword, limit);
+} else {
       console.error('CJ search failed:', e.response?.status, e.message);
     }
     return [];
