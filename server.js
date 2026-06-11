@@ -353,6 +353,17 @@ const BLOCKED_KEYWORDS = [
   'whiteboard','chalkboard','school bag','pencil case','notebook','binder',
   'skolväska','pennfodral','anteckningsbok',
 
+  // ── Barnleksaker förklädda som sport/tech ───────────────────
+  'world cup camera','mini smart camera','miniature camera',
+  'cartoon camera','kids camera','childrens camera','toy camera',
+  'spy camera toy','cute camera','animal camera',
+  'world cup smart','jxl pro','soccer ball camera','football camera',
+  'novelty camera','funny camera','gift camera for kids',
+  'drone toy','mini drone kids','toy drone',
+  'walkie talkie','toy walkie','kids walkie',
+  'toy watch','kids smartwatch','children smartwatch','cartoon watch',
+  'toy gps','kids gps tracker toy',
+
   // ── Övrigt skräp ──────────────────────────────────────────
   'student','casual wear','streetwear','daily wear',
   'hållningskorrigerare','hållningsband','posture brace',
@@ -543,11 +554,49 @@ function isProductBlocked(product) {
   if (title.length < 10) { console.log(`⛔ Title too short: "${title}"`); return true; }
 
   // ── STEG 5: WHITELIST — måste matcha minst ett sport/outdoor-keyword ──
-  // Detta är grindvakten — om produkten inte aktivt bevisar sin relevans blockeras den.
   const passesWhitelist = WHITELIST_KEYWORDS.some(kw => text.includes(kw));
   if (!passesWhitelist) {
-    console.log(`⛔ Failed whitelist (no sport/outdoor match): "${title}"`);
+    console.log(`⛔ Failed whitelist: "${title}"`);
     return true;
+  }
+
+  // ── STEG 6: Djur-override — blockeras även om whitelist passerades ──
+  // Fångar t.ex. "ryggsäck för husdjur" som passerar på "ryggsäck"
+  const PET_OVERRIDE = [
+    'för hundar','för hunden','för katter','för katten','för husdjur','för djur',
+    'för hund','för katt','for dogs','for cats','for pets','for animals',
+    'dog carrier','cat carrier','pet carrier','pet backpack','dog backpack','cat backpack',
+    'hundväska','kattväska','husdjursväska','djurväska','hundkorg','kattbur',
+    'hundöron','kattöron','tassavtryck','tassmönster','paw print',
+    'djurbur','animal cage','pet cage','rabbit hutch','bird cage',
+    'hundstängsel','dog fence','invisible fence','pet fence',
+    'hundhalsband','hundkoppel','kattmärke','hundmärke',
+  ];
+  for (const kw of PET_OVERRIDE) {
+    if (text.includes(kw)) {
+      console.log(`⛔ Pet override "${kw}": "${title}"`);
+      return true;
+    }
+  }
+
+  // ── STEG 7: Kontextuell kontroll — rätt produkt för fel målgrupp ──
+  // Blockerar "barn-" och "kids" versioner av annars ok-produkter
+  const CONTEXT_BLOCK = [
+    'för barn ','for kids ','childrens backpack','kids backpack',
+    'barnryggsäck','barnhjälm utan sport','partytält','festtält',
+    'leopardmönster','zebramönster','djurmönster','animal print',
+    'pu-läder keps','pu leather cap','fashion cap','trendig keps',
+    'quiltad väska','quilted bag','quiltad ryggsäck',
+    'regnstövel','rain boot','gummistövel','wellington boot',
+    'reseväska','resväska','kabinväska','trolley bag','suitcase',
+    'necessär','toiletry bag','makeup bag','cosmetic bag',
+    'herr sandal fashion','dam sandal fashion','fashion sandal',
+  ];
+  for (const kw of CONTEXT_BLOCK) {
+    if (text.includes(kw)) {
+      console.log(`⛔ Context block "${kw}": "${title}"`);
+      return true;
+    }
   }
 
   return false;
@@ -825,6 +874,42 @@ function parseGeneratedContent(raw) {
   };
 }
 
+
+// ── VISION SCREENING ──────────────────────────────────────
+// Skickar första produktbilden till GPT-4o Vision för att avgöra
+// om produkten ser ut som en seriös sport/outdoor-produkt.
+// Körs bara om USE_VISION_FILTER=true i Railway miljövariabler.
+async function passesVisionScreen(imageUrl, title) {
+  if (!process.env.USE_VISION_FILTER || process.env.USE_VISION_FILTER !== 'true') return true;
+  if (!imageUrl || !imageUrl.startsWith('http')) return true;
+
+  try {
+    const res = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      max_tokens: 50,
+      messages: [{
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            text: `Du är kvalitetskontroll för en sportig livsstilsbutik (träning, löpning, outdoor, cykling, yoga, återhämtning). Titta på bilden och svara BARA med "JA" eller "NEJ". Är det här en seriös sport/outdoor-produkt som passar en sportig livsstilsbutik? INTE barnleksaker, husdjursprodukter, modeskor, heminredning, fordon eller gadgets utan tydlig sportanvändning. Produkt: ${title}`
+          },
+          { type: 'image_url', image_url: { url: imageUrl, detail: 'low' } }
+        ]
+      }]
+    });
+    const answer = res.choices[0].message.content.trim().toUpperCase();
+    if (answer.startsWith('NEJ')) {
+      console.log(`⛔ Vision screen failed: "${title}"`);
+      return false;
+    }
+    return true;
+  } catch(e) {
+    console.error('Vision screen error (skipping):', e.message);
+    return true; // fail open — don't block if vision fails
+  }
+}
+
 // ── SCORING ────────────────────────────────────────────────
 function scoreAliProduct(product, index) {
   let score = 0;
@@ -995,6 +1080,10 @@ async function runProductResearch(overrideKeywords = null) {
           categoryName: product.productType || product.categoryName || product.category || 'General'
         });
         const content = parseGeneratedContent(rawContent);
+
+        // Vision screening — valfritt extra lager
+        const visionOk = await passesVisionScreen(images[0], content.title || productName);
+        if (!visionOk) { store.stats.totalRejected++; continue; }
 
         const queueItem = {
           id: `q_${Date.now()}_${Math.random().toString(36).slice(2,7)}`,
