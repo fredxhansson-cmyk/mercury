@@ -567,7 +567,7 @@ async function getCJToken() {
   return null;
 }
 
-async function searchCJProducts(token, keyword, limit = 20, retries = 3)
+async function searchCJProducts(token, keyword, limit = 20, retries = 3) {
   try {
     const res = await axios.get('https://developers.cjdropshipping.com/api2.0/v1/product/list', {
       headers: { 'CJ-Access-Token': token },
