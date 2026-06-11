@@ -78,15 +78,17 @@ async function runScoreUpdate(db) {
 
   let rows;
   try {
-    rows = await db.all(`
-      SELECT
-        product_id,
-        shopify_product_id,
-        published_at,
-        COALESCE(clicks, 0)      AS clicks,
-        COALESCE(conversions, 0) AS conversions
-      FROM product_stats
-    `);
+    const result = await db.query(`
+  SELECT
+    product_id,
+    shopify_product_id,
+    published_at,
+    COALESCE(clicks, 0)      AS clicks,
+    COALESCE(conversions, 0) AS conversions
+  FROM product_stats
+`);
+
+rows = result.rows;
   } catch (e) {
     console.error('[scoring] DB read failed:', e.message);
     return;
@@ -100,8 +102,8 @@ async function runScoreUpdate(db) {
     try {
       const score = calculateScore(row.clicks, row.conversions, row.published_at);
       await writeProductMetafields(row.shopify_product_id, score, row.clicks, row.conversions);
-      await db.run(
-        'UPDATE product_stats SET last_score = ?, updated_at = CURRENT_TIMESTAMP WHERE shopify_product_id = ?',
+      await db.query(
+        'UPDATE product_stats SET last_score = , updated_at = CURRENT_TIMESTAMP WHERE shopify_product_id = ',
         [score, row.shopify_product_id]
       );
       updated++;
