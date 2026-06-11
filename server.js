@@ -1289,6 +1289,80 @@ app.get('/api/products/:id/variants', async (req, res) => {
 });
 
 
+
+// ── BULK FIX: Rensa skräp + rätta kollektioner ────────────
+app.post('/api/products/fix-all', async (req, res) => {
+  const domain = process.env.SHOPIFY_DOMAIN;
+  const token  = process.env.SHOP_TOKEN || process.env.SHOPIFY_TOKEN;
+  if (!domain || !token) return res.status(500).json({ error: 'Shopify ej konfigurerat' });
+
+  // Produkter som alltid ska tas bort oavsett filter
+  const FORCE_DELETE_KEYWORDS = [
+    'dimmerströmbrytare','dimmerstrombrytare','bilgolv',
+    'picknick','dubbelstol','hopfällbar stol','hopfallbar stol',
+    'badrumsrengöring','badrumsrengoring','rengöringsborste','rengoringsborste',
+    'drönare','dronare','gps-styrd drönare','gps-styrd dronare',
+    'quiltad midjeväska','quiltad midjevaska',
+    'väte vatten','vattenflaska med väte','vattenflaska med vate',
+    'kylfläkt','kylflakt',
+    'vibrationstränare','vibrationsmaskin',
+    'tight tröja med halvlång','tight troja med halvlang',
+    'militär ryggsäck','militar ryggsack',
+    '3d-mönster byxor','3d-monster',
+    'canvas ryggsäck äventyr','canvas ryggsack aventyr',
+  ];
+
+  const deleted = [];
+  const reassigned = [];
+  const kept = [];
+
+  for (const item of [...store.products]) {
+    const title = (item.title || '').toLowerCase();
+
+    // Force delete check
+    const forceDelete = FORCE_DELETE_KEYWORDS.some(kw => title.includes(kw));
+    const filterBlock = isProductBlocked({
+      title: item.title, nameEn: item.rawTitle,
+      categoryName: item.category, description: item.description
+    });
+
+    if (forceDelete || filterBlock) {
+      // Delete from Shopify
+      if (item.shopifyId) {
+        try {
+          await axios.delete(
+            `https://${domain}/admin/api/2024-01/products/${item.shopifyId}.json`,
+            { headers: { 'X-Shopify-Access-Token': token } }
+          );
+          console.log(`🗑️ Deleted: ${item.title}`);
+        } catch(e) { console.error(`Delete failed: ${item.title}`, e.message); }
+      }
+      store.products = store.products.filter(p => p.id !== item.id);
+      if (db) await dbDelete('products', item.id);
+      deleted.push(item.title);
+      continue;
+    }
+
+    // Reassign to correct collection
+    if (item.shopifyId) {
+      try {
+        const { assignCollections } = require('./collectionAssign');
+        await assignCollections(item.shopifyId, item.title, item.tags, db);
+        reassigned.push(item.title);
+      } catch(e) {}
+    }
+    kept.push(item.title);
+  }
+
+  res.json({
+    ok: true,
+    deleted: deleted.length,
+    reassigned: reassigned.length,
+    kept: kept.length,
+    deletedTitles: deleted
+  });
+});
+
 // ── TA BORT ENSKILD LIVE-PRODUKT ──────────────────────────
 app.delete('/api/products/:id', async (req, res) => {
   const item = store.products.find(p => p.id === req.params.id || String(p.shopifyId) === req.params.id);
