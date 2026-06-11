@@ -343,7 +343,7 @@ const BLOCKED_KEYWORDS = [
 
   // Smycken / Mode utanför sport
   'jewelry','necklace','earring','bracelet',
-  'ring','luxury watch','wedding dress',
+  'earring','luxury watch','wedding dress',
   'evening dress','tuxedo','high heel','stiletto',
 
   // Barnprodukter vi inte vill sälja
@@ -489,8 +489,8 @@ function isProductBlocked(product) {
 }
 
 // Auto-publish threshold
-const AUTO_PUBLISH_SCORE = 999; // Disabled — all products go to approval queue
-const MIN_SCORE = 50;          // Products below 60 are rejected
+const AUTO_PUBLISH_SCORE = 70; // Disabled — all products go to approval queue
+const MIN_SCORE = 65;          // Products below 60 are rejected
 const MAX_SHIPPING_DAYS = 15;  // Max shipping days — only used when data is available
 
 // ── ALIEXPRESS DATAHUB API (via RapidAPI) ─────────────────
@@ -967,7 +967,7 @@ async function runProductResearch() {
   try {
     const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
   const delay = ms => new Promise(r => setTimeout(r, ms));
-    const keywords = shuffle(TREND_KEYWORDS).slice(0, 10);
+  const keywords = shuffle(TREND_KEYWORDS).slice(0, 50);
     console.log('Researching keywords:', keywords);
 
     let candidates = [];
@@ -996,7 +996,7 @@ async function runProductResearch() {
       console.log('Searching CJ Dropshipping...');
       const cjToken = await getCJToken();
       if (cjToken) {
-        const cjKeywords = shuffle(TREND_KEYWORDS).slice(0, 10);
+      const cjKeywords = shuffle(TREND_KEYWORDS).slice(0, 50);
         for (const keyword of cjKeywords) {
           await delay(2000); // 2s between CJ requests to avoid rate limits
           const products = await searchCJProducts(cjToken, keyword, 10);
@@ -1033,7 +1033,7 @@ async function runProductResearch() {
 
     // Sort by score, take top 5
     candidates.sort((a, b) => b.score - a.score);
-    const top = candidates.slice(0, 100);
+    const top = candidates.slice(0, 300);
 
     console.log(`Found ${candidates.length} candidates, processing top ${top.length}`);
 
@@ -1602,73 +1602,96 @@ app.get('/api/create-collections', async (req, res) => {
   if (!domain || !token) return res.status(500).json({ error: 'Shopify not configured' });
 
   const COLLECTIONS = [
-    // Toppnivå
-    { title: 'Nyheter',      handle: 'nyheter',      sort: 'created-descending' },
-    { title: 'Bästsäljare',  handle: 'bestsellers',  sort: 'best-selling' },
-    { title: 'Rea',          handle: 'rea',           sort: 'price-descending' },
-    // Kön
-    { title: 'Herr', handle: 'herr' },
-    { title: 'Dam',  handle: 'dam' },
-    { title: 'Barn', handle: 'barn' },
-    // Herr kläder
-    { title: 'Herr T-shirts',                handle: 'herr-t-shirts' },
-    { title: 'Herr Linnen',                  handle: 'herr-linnen' },
-    { title: 'Herr Hoodies och Sweatshirts', handle: 'herr-hoodies' },
-    { title: 'Herr Funktionskläder',         handle: 'herr-funktionskl-der' },
-    { title: 'Herr Kompressionskläder',      handle: 'herr-kompressionskl-der' },
-    { title: 'Herr Shorts',                  handle: 'herr-shorts' },
-    { title: 'Herr Byxor och Joggers',       handle: 'herr-byxor' },
-    { title: 'Herr Jackor',                  handle: 'herr-jackor' },
-    { title: 'Herr Underställ',              handle: 'herr-underst-ll' },
-    { title: 'Herr Strumpor och Underkläder',handle: 'herr-strumpor' },
-    // Herr skor
-    { title: 'Herr Löparskor',       handle: 'herr-loparskor' },
-    { title: 'Herr Träningsskor',    handle: 'herr-traningsskor' },
-    { title: 'Herr Trailskor',       handle: 'herr-trailskor' },
-    { title: 'Herr Vandringskängor', handle: 'herr-vandring' },
-    { title: 'Herr Sandaler',        handle: 'herr-sandaler' },
-    // Dam kläder
-    { title: 'Dam T-shirts och Linnen',     handle: 'dam-t-shirts' },
-    { title: 'Dam Hoodies och Sweatshirts', handle: 'dam-hoodies' },
-    { title: 'Dam Funktionskläder',         handle: 'dam-funktionskl-der' },
-    { title: 'Dam Kompressionskläder',      handle: 'dam-kompressionskl-der' },
-    { title: 'Dam Shorts och Tights',       handle: 'dam-shorts' },
-    { title: 'Dam Byxor och Leggings',      handle: 'dam-byxor' },
-    { title: 'Dam Jackor',                  handle: 'dam-jackor' },
-    { title: 'Dam Underställ',              handle: 'dam-underst-ll' },
-    // Sport-BH
-    { title: 'Sport-BH Lätt Support',   handle: 'sport-bh-latt' },
-    { title: 'Sport-BH Medium Support', handle: 'sport-bh-medium' },
-    { title: 'Sport-BH Hög Support',    handle: 'sport-bh-hog' },
-    // Dam skor
-    { title: 'Dam Löparskor',       handle: 'dam-loparskor' },
-    { title: 'Dam Träningsskor',    handle: 'dam-traningsskor' },
-    { title: 'Dam Vandringskängor', handle: 'dam-vandring' },
-    // Barn kläder
-    { title: 'Barn T-shirts och Hoodies',  handle: 'barn-t-shirts' },
-    { title: 'Barn Shorts och Byxor',      handle: 'barn-shorts' },
-    { title: 'Barn Jackor och Regnkläder', handle: 'barn-jackor' },
-    { title: 'Barn Outdoorkläder',         handle: 'barn-outdoor' },
-    { title: 'Barn Underställ',            handle: 'barn-underst-ll' },
-    // Barn skor
-    { title: 'Barn Löparskor',       handle: 'barn-loparskor' },
-    { title: 'Barn Träningsskor',    handle: 'barn-traningsskor' },
-    { title: 'Barn Outdoorskor',     handle: 'barn-outdoorskor' },
-    { title: 'Barn Vandringskängor', handle: 'barn-vandring' },
-    // Sport
-    { title: 'Träning och Fitness',     handle: 'traning-fitness' },
-    { title: 'Friluftsliv och Outdoor', handle: 'friluftsliv-outdoor' },
-    { title: 'Löpning',                 handle: 'lopning' },
-    { title: 'Yoga',                    handle: 'yoga' },
-    { title: 'Cykling',                 handle: 'cykling' },
-    { title: 'Vandring och Camping',    handle: 'vandring' },
-    { title: 'Smart Teknik',            handle: 'smart-teknik' },
-    { title: 'Aterhamtning och Halsa',  handle: 'aterhämtning-halsa' },
-    { title: 'Kost och Vatska',         handle: 'kost-vatska' },
-    { title: 'Utrustning och Tillbehor',handle: 'utrustning-tillbehor' },
-    { title: 'Livsstil',                handle: 'livsstil' },
-  ];
+  // ── TOPPNIVÅ ─────────────────────────────
+  { title: 'Nyheter', handle: 'nyheter', sort: 'created-descending' },
+  { title: 'Bästsäljare', handle: 'bestsellers', sort: 'best-selling' },
+  { title: 'Rea', handle: 'rea', sort: 'price-descending' },
 
+  // ── KÖN ─────────────────────────────────
+  { title: 'Herr', handle: 'herr' },
+  { title: 'Dam', handle: 'dam' },
+  { title: 'Barn', handle: 'barn' },
+
+  // ── HUVUDKATEGORIER ─────────────────────
+  { title: 'Träning & Fitness', handle: 'traning-fitness' },
+  { title: 'Löpning', handle: 'lopning' },
+  { title: 'Outdoor & Camping', handle: 'outdoor-camping' },
+  { title: 'Vandring', handle: 'vandring' },
+  { title: 'Cykling', handle: 'cykling' },
+  { title: 'Yoga & Pilates', handle: 'yoga-pilates' },
+  { title: 'Smart Tech', handle: 'smart-tech' },
+  { title: 'Återhämtning & Hälsa', handle: 'recovery-health' },
+  { title: 'Kost & Hydrering', handle: 'kost-hydrering' },
+  { title: 'Utrustning & Tillbehör', handle: 'utrustning-tillbehor' },
+  { title: 'Sportlivsstil', handle: 'sportlivsstil' },
+
+  // ── SMART TECH ──────────────────────────
+  { title: 'Smartklockor', handle: 'smartklockor' },
+  { title: 'Aktivitetsarmband', handle: 'aktivitetsarmband' },
+  { title: 'Pulsmätare', handle: 'pulsmatare' },
+  { title: 'Sporthörlurar', handle: 'sporthorlurar' },
+  { title: 'Cykeldatorer', handle: 'cykeldatorer' },
+  { title: 'Actionkameror', handle: 'actionkameror' },
+  { title: 'GPS & Navigation', handle: 'gps-navigation' },
+  { title: 'Belysning', handle: 'belysning' },
+  { title: 'Laddning & Powerbanks', handle: 'powerbanks' },
+
+  // ── LÖPNING ─────────────────────────────
+  { title: 'Löparskor', handle: 'loparskor' },
+  { title: 'Trail Running', handle: 'trail-running' },
+  { title: 'Löparkläder', handle: 'loparklader' },
+  { title: 'Hydrering för löpning', handle: 'lopning-hydrering' },
+  { title: 'Löpartillbehör', handle: 'lopning-tillbehor' },
+
+  // ── FITNESS ─────────────────────────────
+  { title: 'Hemmagym', handle: 'hemmagym' },
+  { title: 'Styrketräning', handle: 'styrketraning' },
+  { title: 'Funktionell Träning', handle: 'funktionell-traning' },
+  { title: 'Kondition', handle: 'kondition' },
+  { title: 'Mobility & Stretch', handle: 'mobility-stretch' },
+
+  // ── OUTDOOR ─────────────────────────────
+  { title: 'Ryggsäckar', handle: 'ryggsackar' },
+  { title: 'Tält', handle: 'talt' },
+  { title: 'Sovutrustning', handle: 'sovutrustning' },
+  { title: 'Campingkök', handle: 'campingkok' },
+  { title: 'Vattenrening', handle: 'vattenrening' },
+  { title: 'Friluftsverktyg', handle: 'friluftsverktyg' },
+
+  // ── CYKLING ─────────────────────────────
+  { title: 'Cykelhjälmar', handle: 'cykelhjalmar' },
+  { title: 'Cykelkläder', handle: 'cykelklader' },
+  { title: 'Cykelbelysning', handle: 'cykelbelysning' },
+  { title: 'Cykelväskor', handle: 'cykelvaskor' },
+  { title: 'Cykeltillbehör', handle: 'cykeltillbehor' },
+
+  // ── YOGA ────────────────────────────────
+  { title: 'Yogamattor', handle: 'yogamattor' },
+  { title: 'Yogablock', handle: 'yogablock' },
+  { title: 'Pilates', handle: 'pilates' },
+  { title: 'Meditation', handle: 'meditation' },
+
+  // ── RECOVERY ────────────────────────────
+  { title: 'Massage', handle: 'massage' },
+  { title: 'Kompression', handle: 'kompression' },
+  { title: 'Stöd & Skydd', handle: 'stod-skydd' },
+  { title: 'Stretching', handle: 'stretching' },
+  { title: 'Kyl & Värme', handle: 'kyl-varme' },
+
+  // ── KLÄDER ──────────────────────────────
+  { title: 'Funktionskläder Herr', handle: 'herr-funktionsklader' },
+  { title: 'Funktionskläder Dam', handle: 'dam-funktionsklader' },
+  { title: 'Kompressionskläder Herr', handle: 'herr-kompression' },
+  { title: 'Kompressionskläder Dam', handle: 'dam-kompression' },
+  { title: 'Sport-BH', handle: 'sport-bh' },
+
+  // ── SKOR ────────────────────────────────
+  { title: 'Träningsskor', handle: 'traningsskor' },
+  { title: 'Löparskor', handle: 'loparskor' },
+  { title: 'Trailskor', handle: 'trailskor' },
+  { title: 'Vandringskängor', handle: 'vandringskangor' },
+  { title: 'Sandaler', handle: 'sandaler' },
+];
   const results = { created: [], existing: [], failed: [] };
   const delay = ms => new Promise(r => setTimeout(r, ms));
 
