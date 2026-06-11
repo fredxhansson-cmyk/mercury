@@ -577,17 +577,11 @@ async function searchCJProducts(token, keyword, limit = 20, retries = 3) {
     console.log(`CJ "${keyword}": ${list.length} results (msg: ${res.data?.message})`);
     return list;
   } catch(e) {
-  if (e.response?.status === 429) {
-  console.error('CJ 429 RESPONSE:');
-  console.error(JSON.stringify(e.response.data, null, 2));
-  return [];
-}
-return [];
-} else {
-      console.error('CJ search failed:', e.response?.status, e.message);
-    }
+    console.error("CJ ERROR STATUS:", e.response?.status);
+    console.error("CJ ERROR DATA:", JSON.stringify(e.response?.data, null, 2));
+    console.error("CJ ERROR MESSAGE:", e.message);
     return [];
-  }
+  }  }
 }
 
 function scoreCJProduct(product, index) {
