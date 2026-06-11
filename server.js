@@ -344,6 +344,7 @@ const BLOCKED_KEYWORDS = [
   // Smycken / Mode utanför sport
   'jewelry','necklace','earring','bracelet',
   'earring','luxury watch','wedding dress',
+  'mattress','latex mattress','bed','bedroom','sofa','pillow','cushion','furniture','garden bench','dress','skirt','jumpsuit','curtain','tapestry','vacuum cleaner','multimeter','car switch','headlight switch',
   'evening dress','tuxedo','high heel','stiletto',
 
   // Barnprodukter vi inte vill sälja
@@ -954,7 +955,65 @@ const TREND_KEYWORDS = [
 'outdoor gps',
 'solar charger',
 'headlamp',
-'smart ring'
+'smart ring',
+'smartwatch',
+'smartwatch gps',
+'fitness smartwatch',
+'gps running watch',
+'triathlon watch',
+'trail running watch',
+'cycling gps',
+'gps cycling computer',
+'heart rate strap',
+'chest heart rate monitor',
+'fitness band',
+'sleep tracker',
+'recovery tracker',
+'smart scale',
+'body composition scale',
+'wireless sports headphones',
+'bluetooth sports earbuds',
+'waterproof earbuds',
+'open ear headphones',
+'action cam',
+'action cam 4k',
+'helmet camera',
+'sports camera',
+'portable power station',
+'camping power bank',
+'solar power bank',
+'portable solar charger',
+'led headlamp',
+'usb headlamp',
+'camping flashlight',
+'bike gps',
+'bike radar',
+'bike camera',
+'cycling sensor',
+'cadence sensor',
+'speed sensor bike',
+'weighted vest',
+'wrist wraps',
+'lifting straps',
+'squat pad',
+'workout towel',
+'ice bath',
+'ice bath tub',
+'recovery sandals',
+'posture corrector',
+'neck massager',
+'running sunglasses',
+'reflective vest',
+'running socks',
+'carbon running shoes',
+'camping chair',
+'camping table',
+'emergency radio',
+'survival flashlight',
+'bike phone mount',
+'bike repair kit',
+'bike pump',
+'bike bottle cage',
 ];
 
 // ── MAIN RESEARCH PIPELINE ─────────────────────────────────
@@ -967,7 +1026,7 @@ async function runProductResearch() {
   try {
     const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
   const delay = ms => new Promise(r => setTimeout(r, ms));
-  const keywords = shuffle(TREND_KEYWORDS).slice(0, 50);
+  const keywords = shuffle(TREND_KEYWORDS).slice(0, 150);
     console.log('Researching keywords:', keywords);
 
     let candidates = [];
@@ -996,7 +1055,7 @@ async function runProductResearch() {
       console.log('Searching CJ Dropshipping...');
       const cjToken = await getCJToken();
       if (cjToken) {
-      const cjKeywords = shuffle(TREND_KEYWORDS).slice(0, 50);
+      const cjKeywords = shuffle(TREND_KEYWORDS).slice(0, 150);
         for (const keyword of cjKeywords) {
           await delay(2000); // 2s between CJ requests to avoid rate limits
           const products = await searchCJProducts(cjToken, keyword, 10);
