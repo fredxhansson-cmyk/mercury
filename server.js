@@ -578,10 +578,9 @@ async function searchCJProducts(token, keyword, limit = 20, retries = 3) {
     return list;
   } catch(e) {
   if (e.response?.status === 429) {
-  console.error('CJ rate limit hit — waiting 10s...');
-  await new Promise(r => setTimeout(r, 10000));
-  if (retries > 0) {
-  return searchCJProducts(token, keyword, limit, retries - 1);
+  console.error('CJ 429 RESPONSE:');
+  console.error(JSON.stringify(e.response.data, null, 2));
+  return [];
 }
 return [];
 } else {
