@@ -549,7 +549,7 @@ async function getCJToken() {
     }
   }
   // Fallback to email/password
-  if (process.env.CJ_EMAIL && process.env.CJ_PASSWORD) {
+  if (process.env.CJ_API_KEY || (process.env.CJ_EMAIL && process.env.CJ_PASSWORD)) {
     try {
       const res = await axios.post('https://developers.cjdropshipping.com/api2.0/v1/authentication/getAccessToken', {
         email: process.env.CJ_EMAIL,
@@ -1046,7 +1046,7 @@ async function runProductResearch() {
     }
 
     // ── SOURCE 2: CJ Dropshipping ──
-    if (process.env.CJ_EMAIL && process.env.CJ_PASSWORD) {
+    if (process.env.CJ_API_KEY || (process.env.CJ_EMAIL && process.env.CJ_PASSWORD)) {
       console.log('Searching CJ Dropshipping...');
       const cjToken = await getCJToken();
       if (cjToken) {
