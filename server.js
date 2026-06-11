@@ -368,6 +368,13 @@ const NICHE_KEYWORDS = [
   'sports earbuds',
   'running headphones',
   'smartwatch sport',
+  'bone-conduction',
+  'neckband headphones',
+  'smart glasses',
+  'ai glasses',
+  'bluetooth headphones',
+  'wireless headphones',
+  'open ear',
   'smartwatch',
   'smart watch',
   'smart ring',
@@ -450,7 +457,7 @@ function isProductBlocked(product) {
   }
 
   // Block car brands
-  const carBrands = ['ford ','toyota ','honda ','bmw ','mercedes ','audi ','volkswagen '];
+  const carBrands = ['ford ','toyota ','honda ','bmw ','mercedes ','audi ','volkswagen ','dodge ','pontiac ','chevrolet ','gmc ','cadillac ','jeep ','chrysler ','ram ','nissan ','mazda ','kia ','hyundai ','volvo ','saab ','peugeot ','renault '];
   for (const brand of carBrands) {
     if (text.includes(brand)) {
       console.log(`⛔ Blocked car brand: "${product.title||product.nameEn}"`);
@@ -621,6 +628,13 @@ function scoreCJProduct(product, index) {
     'gps watch',
     'heart rate monitor',
     'smartwatch sport',
+  'bone-conduction',
+  'neckband headphones',
+  'smart glasses',
+  'ai glasses',
+  'bluetooth headphones',
+  'wireless headphones',
+  'open ear',
     'sports earbuds',
     'running headphones',
     'cycling computer',
