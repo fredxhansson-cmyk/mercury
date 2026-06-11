@@ -581,7 +581,7 @@ async function searchCJProducts(token, keyword, limit = 20, retries = 3) {
     console.error("CJ ERROR DATA:", JSON.stringify(e.response?.data, null, 2));
     console.error("CJ ERROR MESSAGE:", e.message);
     return [];
-  }  }
+  }  
 }
 
 function scoreCJProduct(product, index) {
