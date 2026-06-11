@@ -577,6 +577,10 @@ async function searchCJProducts(token, keyword, limit = 20, retries = 3) {
     console.log(`CJ "${keyword}": ${list.length} results (msg: ${res.data?.message})`);
     return list;
   } catch(e) {
+  if (e.response?.data?.code === 1600200) {
+    console.log("CJ daily quota exhausted");
+    return [];
+  }
     console.error("CJ ERROR STATUS:", e.response?.status);
     console.error("CJ ERROR DATA:", JSON.stringify(e.response?.data, null, 2));
     console.error("CJ ERROR MESSAGE:", e.message);
