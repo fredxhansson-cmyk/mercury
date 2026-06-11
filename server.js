@@ -1288,6 +1288,35 @@ app.get('/api/products/:id/variants', async (req, res) => {
   } catch(e) { res.status(500).json({ error: e.message }); }
 });
 
+
+// ── TA BORT ENSKILD LIVE-PRODUKT ──────────────────────────
+app.delete('/api/products/:id', async (req, res) => {
+  const item = store.products.find(p => p.id === req.params.id || String(p.shopifyId) === req.params.id);
+  if (!item) return res.status(404).json({ error: 'Produkt hittades inte' });
+
+  const domain = process.env.SHOPIFY_DOMAIN;
+  const token  = process.env.SHOP_TOKEN || process.env.SHOPIFY_TOKEN;
+
+  // Ta bort från Shopify
+  if (item.shopifyId && domain && token) {
+    try {
+      await axios.delete(
+        `https://${domain}/admin/api/2024-01/products/${item.shopifyId}.json`,
+        { headers: { 'X-Shopify-Access-Token': token } }
+      );
+      console.log(`🗑️ Deleted from Shopify: ${item.title}`);
+    } catch(e) {
+      console.error('Shopify delete failed:', e.message);
+    }
+  }
+
+  // Ta bort lokalt + DB
+  store.products = store.products.filter(p => p.id !== item.id);
+  if (db) await dbDelete('products', item.id);
+
+  res.json({ ok: true, deleted: item.title });
+});
+
 app.post('/api/approve/:id', async (req, res) => {
   const item = store.queue.find(p => p.id === req.params.id);
   if (!item) return res.status(404).json({ error: 'Not found' });
