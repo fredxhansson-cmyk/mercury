@@ -297,7 +297,7 @@ async function addProductToCollection(productId, collectionName) {
 const BLOCKED_KEYWORDS = [
   // Sex / Adult
   'sex','adult','erotic','porn','porno','nude','naked',
-  'vibrator','vibrat','dildo','buttplug','condom',
+  'vibrator','dildo','buttplug','condom',
   'penis','vagina','anal','fetish','bdsm','lingerie sexy',
 
   // Våld / Vapen
@@ -490,7 +490,7 @@ function isProductBlocked(product) {
 
 // Auto-publish threshold
 const AUTO_PUBLISH_SCORE = 999; // Disabled — all products go to approval queue
-const MIN_SCORE = 70;          // Products below 60 are rejected
+const MIN_SCORE = 50;          // Products below 60 are rejected
 const MAX_SHIPPING_DAYS = 15;  // Max shipping days — only used when data is available
 
 // ── ALIEXPRESS DATAHUB API (via RapidAPI) ─────────────────
@@ -611,7 +611,7 @@ function scoreCJProduct(product, index) {
 
   // Pris
   const price = parseFloat(product.sellPrice) || 10;
-  if (price >= 5 && price <= 80) score += 10;
+  if (price >= 5 && price <= 80) score += 20;
 
   // Ordrar
   const orders = parseInt(product.orderCount) || 0;
