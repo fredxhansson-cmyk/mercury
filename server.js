@@ -1019,7 +1019,7 @@ async function runProductResearch() {
   try {
     const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
   const delay = ms => new Promise(r => setTimeout(r, ms));
-  const keywords = shuffle(TREND_KEYWORDS).slice(0, 150);
+  const keywords = shuffle(TREND_KEYWORDS).slice(0, 40);
     console.log('Researching keywords:', keywords);
 
     let candidates = [];
@@ -1048,7 +1048,7 @@ async function runProductResearch() {
       console.log('Searching CJ Dropshipping...');
       const cjToken = await getCJToken();
       if (cjToken) {
-      const cjKeywords = shuffle(TREND_KEYWORDS).slice(0, 150);
+      const cjKeywords = shuffle(TREND_KEYWORDS).slice(0, 40);
         for (const keyword of cjKeywords) {
           await delay(2000); // 2s between CJ requests to avoid rate limits
           const products = await searchCJProducts(cjToken, keyword, 10);
