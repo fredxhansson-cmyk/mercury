@@ -491,7 +491,7 @@ function isProductBlocked(product) {
 // Auto-publish threshold
 const AUTO_PUBLISH_SCORE = 999; // Disabled — all products go to approval queue
 const MIN_SCORE = 70;          // Products below 60 are rejected
-const MAX_SHIPPING_DAYS = 21;  // Max shipping days — only used when data is available
+const MAX_SHIPPING_DAYS = 15;  // Max shipping days — only used when data is available
 
 // ── ALIEXPRESS DATAHUB API (via RapidAPI) ─────────────────
 let aliExpressDisabled = false; // Auto-disable if quota exceeded
@@ -1033,7 +1033,7 @@ async function runProductResearch() {
 
     // Sort by score, take top 5
     candidates.sort((a, b) => b.score - a.score);
-    const top = candidates.slice(0, 20);
+    const top = candidates.slice(0, 100);
 
     console.log(`Found ${candidates.length} candidates, processing top ${top.length}`);
 
@@ -1049,14 +1049,20 @@ async function runProductResearch() {
       const idExists = [...store.queue, ...store.products].find(
         p => p.aliId === String(product.itemId||product.productId||product.pid)
       );
-      if (idExists) continue;
+     if (idExists) {
+  console.log(`⛔ Duplicate ID: ${product.title || product.nameEn}`);
+  continue;
+}
 
       // Skip if very similar title already in queue (duplicate from different source)
       const productTitle = (product.title||product.nameEn||'').toLowerCase().slice(0,30);
       const titleExists = productTitle.length > 5 && [...store.queue, ...store.products].find(
         p => p.rawTitle?.toLowerCase().slice(0,30) === productTitle
       );
-      if (titleExists) continue;
+     if (titleExists) {
+  console.log(`⛔ Duplicate Title: ${product.title || product.nameEn}`);
+  continue;
+}
 
       try {
         // Get full product details + images
