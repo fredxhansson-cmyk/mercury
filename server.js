@@ -402,7 +402,7 @@ const NICHE_KEYWORDS = [
   'portable power station',
   'power bank',
   'solar charger',
-  'solar power bank'
+  'solar power bank',
 
   // Apparel
   'training shorts',
