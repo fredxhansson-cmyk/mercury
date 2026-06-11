@@ -52,7 +52,7 @@ module.exports = function trackingRoutes(db) {
 
     try {
       // Upsert stats row (ensure product exists in tracking table)
-      await db.run(`
+      await db.query(`
         INSERT INTO product_stats (shopify_product_id, clicks)
         VALUES (?, 1)
         ON CONFLICT (shopify_product_id) DO UPDATE SET
@@ -61,7 +61,7 @@ module.exports = function trackingRoutes(db) {
       `, [product_id]);
 
       // Log event for time-decay analysis
-      await db.run(`
+      await db.query(`
         INSERT INTO click_events (shopify_product_id, session_id, referrer)
         VALUES (?, ?, ?)
       `, [product_id, session_id || null, req.get('Referer') || null]);
@@ -107,18 +107,18 @@ module.exports = function trackingRoutes(db) {
         const revenue   = parseFloat(item.price) * quantity;
 
         // Update stats
-        await db.run(`
+        await db.query(`
           INSERT INTO product_stats (shopify_product_id, conversions)
-          VALUES (?, ?)
+          VALUES ($1, $2)
           ON CONFLICT (shopify_product_id) DO UPDATE SET
-            conversions = conversions + ?,
-            updated_at  = CURRENT_TIMESTAMP
+            conversions = product_stats.conversions + $3,
+            updated_at = CURRENT_TIMESTAMP
         `, [productId, quantity, quantity]);
 
         // Log conversion event
-        await db.run(`
+        await db.query(`
           INSERT INTO conversion_events (shopify_product_id, order_id, quantity, revenue_sek)
-          VALUES (?, ?, ?, ?)
+          VALUES ($1, $2, $3, $4)
         `, [productId, String(order.id), quantity, revenue]);
       }
 
@@ -142,11 +142,11 @@ module.exports = function trackingRoutes(db) {
     }
 
     try {
-      await db.run(`
+      await db.query(`
         INSERT INTO product_stats (shopify_product_id, product_title, published_at)
-        VALUES (?, ?, datetime('now'))
+        VALUES ($1, $2, NOW())
         ON CONFLICT (shopify_product_id) DO NOTHING
-      `, [String(shopify_product_id), product_title || '']);
+      `, [String(shopify_product_id), product_title || ""]);
 
       res.json({ ok: true });
     } catch (e) {
@@ -160,7 +160,7 @@ module.exports = function trackingRoutes(db) {
 
   router.get('/stats', async (req, res) => {
     try {
-      const rows = await db.all(`
+      const result = await db.query(`
         SELECT
           shopify_product_id,
           product_title,
