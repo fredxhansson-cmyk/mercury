@@ -242,7 +242,6 @@ async function addProductToCollection(productId, collectionName) {
 // ── CONTENT FILTER ────────────────────────────────────────
 const BLOCKED_KEYWORDS = [
   // Sex / Adult
-  'sex','adult','erotic','porn','porno','nude','naked',
   'vibrator','dildo','buttplug','condom',
   'penis','vagina','anal','fetish','bdsm','lingerie sexy',
 
@@ -290,7 +289,6 @@ const BLOCKED_KEYWORDS = [
   // Smycken / Mode utanför sport
   'jewelry','necklace','earring','bracelet',
   'earring','luxury watch','wedding dress',
-  'mattress','latex mattress','bed','bedroom','sofa','pillow','cushion','furniture','garden bench','dress','skirt','jumpsuit','curtain','tapestry','vacuum cleaner','multimeter','car switch','headlight switch',
   'evening dress','tuxedo','high heel','stiletto',
 
   // Barnprodukter vi inte vill sälja
@@ -370,6 +368,41 @@ const NICHE_KEYWORDS = [
   'sports earbuds',
   'running headphones',
   'smartwatch sport',
+  'smartwatch',
+  'smart watch',
+  'smart ring',
+  'gps',
+  'gps navigation',
+  'outdoor gps',
+  'action camera',
+  'action cam',
+  'sports camera',
+  'cycling computer',
+  'bike computer',
+  'heart rate strap',
+  'heart rate',
+  'fitness watch',
+  'sport watch',
+  'running watch',
+  'triathlon watch',
+  'trail running watch',
+  'bone conduction',
+  'open ear headphones',
+  'wireless sports headphones',
+  'bluetooth sports earbuds',
+  'sports earbuds wireless',
+  'headlamp',
+  'led headlamp',
+  'usb headlamp',
+  'helmet camera',
+  'bike camera',
+  'cadence sensor',
+  'speed sensor',
+  'bike radar',
+  'portable power station',
+  'power bank',
+  'solar charger',
+  'solar power bank'
 
   // Apparel
   'training shorts',
