@@ -1720,10 +1720,13 @@ app.listen(PORT, async () => {
     app.use('/track', trackingRoutes(db));
     console.log('✓ Tracking routes mounted at /track');
   }
-  if (startScoreCron && db) {
-    startScoreCron(db);
-    console.log('✓ Score cron started');
-  }
+  // Temporarily disabled until scoring is migrated to PostgreSQL
+/*
+if (startScoreCron && db) {
+  startScoreCron(db);
+  console.log('✓ Score cron started');
+}
+*/
   console.log(`Mercury Backend running on port ${PORT}`);
   console.log('Shopify:', process.env.SHOPIFY_DOMAIN || 'NOT SET');
   console.log('OpenAI:', process.env.OPENAI_API_KEY ? 'SET' : 'NOT SET');
