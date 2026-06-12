@@ -1363,6 +1363,57 @@ app.post('/api/products/fix-all', async (req, res) => {
   });
 });
 
+
+// ── FIXA PRODUKTTYPER & KATEGORIER ────────────────────────
+// Korrigerar ORDINARY_PRODUCT, Fitness & Hälsa → Träning & Fitness
+// och flyttar tält/kylfläkt till rätt kategorier
+app.post('/api/products/fix-types', async (req, res) => {
+  const domain = process.env.SHOPIFY_DOMAIN;
+  const token  = process.env.SHOP_TOKEN || process.env.SHOPIFY_TOKEN;
+  if (!domain || !token) return res.status(500).json({ error: 'Shopify ej konfigurerat' });
+
+  const FIXES = [
+    // ORDINARY_PRODUCT → rätt kategori
+    { shopifyId: '10869379760465', product_type: 'Träning & Fitness' }, // sportkalsonger
+    { shopifyId: '10875981693265', product_type: 'Träning & Fitness' }, // halvzip träningströja
+
+    // Fitness & Hälsa → Träning & Fitness
+    { shopifyId: '10867657113937', product_type: 'Träning & Fitness' }, // träningstights
+    { shopifyId: '10867589742929', product_type: 'Träning & Fitness' }, // stepmaskin
+
+    // Tält → Friluftsliv & Outdoor
+    { shopifyId: '10869736898897', product_type: 'Friluftsliv & Outdoor' }, // tält 4-6
+    { shopifyId: '10869735784785', product_type: 'Friluftsliv & Outdoor' }, // familjetält
+
+    // Kylfläkt-flaska → Kost & Vätska
+    { shopifyId: '10869753184593', product_type: 'Kost & Vätska' }, // kylfläkt flaska
+  ];
+
+  const results = { fixed: [], failed: [] };
+  const delay = ms => new Promise(r => setTimeout(r, ms));
+
+  for (const fix of FIXES) {
+    try {
+      await axios.put(
+        `https://${domain}/admin/api/2024-01/products/${fix.shopifyId}.json`,
+        { product: { id: fix.shopifyId, product_type: fix.product_type } },
+        { headers: { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' } }
+      );
+      // Update local store too
+      const local = store.products.find(p => String(p.shopifyId) === fix.shopifyId);
+      if (local) { local.category = fix.product_type; await dbSave('products', local); }
+      results.fixed.push(fix.shopifyId);
+      console.log(`✓ Fixed product type: ${fix.shopifyId} → ${fix.product_type}`);
+      await delay(500);
+    } catch(e) {
+      results.failed.push({ id: fix.shopifyId, error: e.message });
+      console.error(`✗ Failed: ${fix.shopifyId}`, e.message);
+    }
+  }
+
+  res.json({ ok: true, fixed: results.fixed.length, failed: results.failed.length, details: results });
+});
+
 // ── TA BORT ENSKILD LIVE-PRODUKT ──────────────────────────
 app.delete('/api/products/:id', async (req, res) => {
   const item = store.products.find(p => p.id === req.params.id || String(p.shopifyId) === req.params.id);
