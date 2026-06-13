@@ -416,6 +416,92 @@ const NICHE_KEYWORDS = [
   'träning','fitness','gym','löpning','vandring','friluftsliv','cykling','återhämtning','sportkläder','träningskläder'
 ];
 
+
+// ── STANDARDISERADE TAGGAR ────────────────────────────────
+// Format: prefix_värde — används av Shopify Search & Discovery
+// för automatiska filter i kollektioner.
+function generateStandardTags(product, aiTags = []) {
+  const title = (product.title || product.nameEn || '').toLowerCase();
+  const cat   = (product.categoryName || product.category || '').toLowerCase();
+  const text  = title + ' ' + cat;
+  const tags  = new Set();
+
+  // ── Aktivitet ─────────────────────────────────────────────
+  const ACTIVITY_MAP = [
+    ['aktivitet_löpning',    ['running','jogging','trail run','löpning','löpar']],
+    ['aktivitet_gym',        ['gym','fitness','workout','crossfit','weightlifting','styrka']],
+    ['aktivitet_yoga',       ['yoga','pilates','meditation']],
+    ['aktivitet_camping',    ['camping','camp ','tent','tält','sovsäck','sleeping bag']],
+    ['aktivitet_vandring',   ['hiking','trekking','vandring','trail','fjäll']],
+    ['aktivitet_cykling',    ['cycling','cykling','bike','bicycle','mtb']],
+    ['aktivitet_simning',    ['swimming','swim','simning']],
+    ['aktivitet_klättring',  ['climbing','klättring','bouldering']],
+    ['aktivitet_skidor',     ['skiing','ski','snowboard','skidor']],
+    ['aktivitet_återhämtning',['recovery','massage','foam roller','återhämtning','kompression']],
+  ];
+  for (const [tag, keywords] of ACTIVITY_MAP) {
+    if (keywords.some(kw => text.includes(kw))) tags.add(tag);
+  }
+
+  // ── Produkttyp ────────────────────────────────────────────
+  const TYPE_MAP = [
+    ['typ_tshirt',       ['t-shirt','tee ','tank top','linne']],
+    ['typ_hoodie',       ['hoodie','sweatshirt','pullover']],
+    ['typ_jacka',        ['jacket','jacka','windbreaker','fleece','softshell']],
+    ['typ_shorts',       ['shorts','short ']],
+    ['typ_tights',       ['tights','leggings','capri']],
+    ['typ_byxor',        ['pants','byxor','jogger','trackpant']],
+    ['typ_understall',   ['base layer','thermal','underställ','long johns']],
+    ['typ_sport-bh',     ['sports bra','sport bra','sport-bh','sportbh']],
+    ['typ_strumpor',     ['socks','strumpor']],
+    ['typ_löparskor',    ['running shoe','trail shoe','löparsko','löparskor']],
+    ['typ_träningsskor', ['training shoe','gym shoe','crossfit shoe','träningssko']],
+    ['typ_vandringsskor',['hiking boot','trekking boot','vandringsko','vandringskänga']],
+    ['typ_ryggsäck',     ['backpack','ryggsäck','daypack']],
+    ['typ_tält',         ['tent','tält']],
+    ['typ_sovsäck',      ['sleeping bag','sovsäck']],
+    ['typ_yogamatta',    ['yoga mat','yogamatta']],
+    ['typ_träningsband', ['resistance band','träningsband']],
+    ['typ_massagegun',   ['massage gun','massagepistol']],
+    ['typ_vattenflaska', ['water bottle','vattenflaska','shaker']],
+    ['typ_klocka',       ['watch','klocka','tracker','smartwatch']],
+    ['typ_hörlurar',     ['earbuds','headphones','hörlurar']],
+    ['typ_kamera',       ['action camera','actionkamera']],
+    ['typ_cykelkläder',  ['cycling jersey','cycling short','cykelbyxor','cykeltröja']],
+    ['typ_hjälm',        ['helmet','hjälm']],
+  ];
+  for (const [tag, keywords] of TYPE_MAP) {
+    if (keywords.some(kw => text.includes(kw))) tags.add(tag);
+  }
+
+  // ── Kön ───────────────────────────────────────────────────
+  const genderText = text + ' ' + (product.gender || '');
+  if (genderText.includes('women') || genderText.includes('dam') || genderText.includes('female') || product.gender === 'dam') {
+    tags.add('kön_dam');
+  } else if (genderText.includes(' men ') || genderText.includes('herr') || genderText.includes('male') || product.gender === 'herr') {
+    tags.add('kön_herr');
+  } else if (genderText.includes('kids') || genderText.includes('barn') || genderText.includes('children')) {
+    tags.add('kön_barn');
+  } else {
+    tags.add('kön_unisex');
+  }
+
+  // ── Prisintervall ─────────────────────────────────────────
+  const price = parseInt(product.sellPrice) || 0;
+  if (price < 200)       tags.add('pris_under-200');
+  else if (price < 500)  tags.add('pris_200-500');
+  else if (price < 1000) tags.add('pris_500-1000');
+  else                   tags.add('pris_over-1000');
+
+  // ── AI-taggar (rensade) ───────────────────────────────────
+  for (const t of aiTags) {
+    const clean = t.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-zåäö0-9-_]/g, '');
+    if (clean.length > 2) tags.add(clean);
+  }
+
+  return [...tags];
+}
+
 // ── WHITELIST — produkten MÅSTE matcha minst ett av dessa ──
 // Om ingen match → blockeras oavsett vad NICHE_KEYWORDS säger.
 const WHITELIST_KEYWORDS = [
@@ -1098,7 +1184,10 @@ async function runProductResearch(overrideKeywords = null) {
           meta: content.meta, description: content.description,
           descriptionHtml: content.descriptionHtml, benefits: content.benefits,
           adHook: content.adHook,
-          tags: [...(content.tags||[]), mapCategory(product.categoryName || product.productType || '', product.title || product.nameEn || '').tag],
+          tags: generateStandardTags(
+            { title: content.title || productName, categoryName: product.categoryName || product.productType, gender: mapCategory(product.categoryName || product.productType || '', product.title || product.nameEn || '').gender, sellPrice: sellSek },
+            content.tags || []
+          ),
           rawTitle: product.title || product.name || product.subject || 'Product',
           aliUrl: `https://www.aliexpress.com/item/${product.itemId||product.productId}.html`,
           addedAt: new Date().toISOString(), status: 'pending',
@@ -1363,6 +1452,45 @@ app.post('/api/products/fix-all', async (req, res) => {
   });
 });
 
+
+
+// ── RETAG ALLA LIVE-PRODUKTER ──────────────────────────────
+// Uppdaterar taggar på alla Shopify-produkter till standardformat
+app.post('/api/products/retag', async (req, res) => {
+  const domain = process.env.SHOPIFY_DOMAIN;
+  const token  = process.env.SHOP_TOKEN || process.env.SHOPIFY_TOKEN;
+  if (!domain || !token) return res.status(500).json({ error: 'Shopify ej konfigurerat' });
+
+  const products = store.products.filter(p => p.shopifyId);
+  res.json({ ok: true, message: `Retaggar ${products.length} produkter i bakgrunden...`, total: products.length });
+
+  (async () => {
+    const delay = ms => new Promise(r => setTimeout(r, ms));
+    let updated = 0;
+
+    for (const item of products) {
+      try {
+        const newTags = generateStandardTags(
+          { title: item.title, categoryName: item.category, gender: item.gender, sellPrice: item.sellPrice },
+          item.tags || []
+        );
+        await axios.put(
+          `https://${domain}/admin/api/2024-01/products/${item.shopifyId}.json`,
+          { product: { id: item.shopifyId, tags: newTags.join(',') } },
+          { headers: { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' } }
+        );
+        item.tags = newTags;
+        await dbSave('products', item);
+        console.log(`✓ Retagged: ${item.title} → ${newTags.join(', ')}`);
+        updated++;
+        await delay(500);
+      } catch(e) {
+        console.error(`✗ Retag failed: ${item.title}`, e.message);
+      }
+    }
+    console.log(`[RETAG] Done: ${updated}/${products.length} updated`);
+  })();
+});
 
 // ── FIXA PRODUKTTYPER & KATEGORIER ────────────────────────
 // Korrigerar ORDINARY_PRODUCT, Fitness & Hälsa → Träning & Fitness
