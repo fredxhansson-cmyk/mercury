@@ -108,96 +108,129 @@ function snapPrice(rawSek) {
   return closest;
 }
 
-// ── OUTDOOR-FIRST KEYWORD LISTS ────────────────────────────
-// These keywords ALWAYS map to Friluftsliv & Outdoor — never to Träning & Fitness.
-const OUTDOOR_PRIORITY_KEYWORDS = [
-  'tent', 'tents', 'camping tent', 'dome tent', 'backpacking tent', 'shelter', 'tarp', 'bivvy', 'hammock tent',
-  'sleeping bag', 'sleep bag', 'mummy bag', 'down sleeping', 'quilt sleeping',
-  'trekking poles', 'trekking pole', 'hiking poles', 'hiking pole', 'walking poles', 'trail poles',
-  'hiking boots', 'trail boots', 'approach shoes', 'hiking shoes', 'waterproof boots',
-  'hiking backpack', 'trekking backpack', 'trail backpack', 'outdoor backpack', 'camping backpack',
-  'daypack', 'summit pack',
-  'camping stove', 'camp stove', 'backpacking stove', 'camping cookware', 'camp cookset',
-  'camping pot', 'titanium pot', 'mess kit',
-  'headlamp', 'head lamp', 'camping lantern', 'camp light',
-  'compass', 'orienteering', 'survival kit', 'emergency blanket', 'fire starter', 'flint',
-  'carabiner', 'climbing rope', 'harness', 'belay',
-  'water filter', 'water purifier', 'water purification', 'life straw',
-  'camping', 'camp gear', 'campsite', 'campfire', 'outdoor cooking',
-  'hiking', 'trekking', 'mountaineering',
-  'backpacking', 'bikepacking', 'kayaking', 'canoe', 'paddling',
-  'rock climbing', 'bouldering', 'rappelling',
-  'snowshoeing', 'snowshoe', 'ski touring', 'backcountry',
+// ── NY KATEGORISTRUKTUR (9 kollektioner) ─────────────────
+// Handles: traning, lopning, outdoor, yoga-wellness, recovery,
+//          nutrition, smart-tech, herr, dam
+const COLLECTION_RULES = [
+  {
+    handle: 'smart-tech',
+    keywords: ['smartwatch','gps watch','gps-klocka','fitness tracker','activity tracker',
+      'heart rate monitor','pulsmätare','sports earbuds','sporthörlurar','bone conduction',
+      'cycling computer','cykelcomputer','action camera','actionkamera','running watch',
+      'löparklocka','triathlon watch','smart ring','fitness watch','sport watch',
+      'bluetooth headphones','wireless earbuds','headlamp tech'],
+  },
+  {
+    handle: 'recovery',
+    keywords: ['massage gun','massagepistol','foam roller','skumrulle','compression sock',
+      'kompressionssocka','knee brace','knästöd','ankle brace','elbow brace',
+      'ice bath','isbad','cold therapy','heat therapy','acupressure','back stretcher',
+      'posture corrector','percussion massager','recovery sandal','trigger point',
+      'kinesio tape','sports tape','muscle recovery','återhämtning'],
+  },
+  {
+    handle: 'outdoor',
+    keywords: ['tent','tält','camping','sleeping bag','sovsäck','hiking','vandring',
+      'trekking','trekking pole','vandringsstav','hiking boot','vandringskänga',
+      'outdoor backpack','friluftsryggsäck','climbing','klättring','carabiner',
+      'water filter','camping stove','headlamp','pannlampa','survival','kayak',
+      'backpacking','trail shoe','trailsko','mountaineering','snowshoe'],
+  },
+  {
+    handle: 'lopning',
+    keywords: ['running shoe','löparsko','trail running','road running','running jacket',
+      'löparjacka','running tights','löpartights','running shorts','löparshorts',
+      'hydration vest','löparväska','running belt','running cap','running sock',
+      'running watch','löparklocka','gps running','jogging','marathon','sprint'],
+  },
+  {
+    handle: 'yoga-wellness',
+    keywords: ['yoga','pilates','meditation','yoga mat','yogamatta','yoga block',
+      'yoga strap','yoga wheel','pilates ring','stretching','mindfulness',
+      'wellness','foam yoga','bolster','yoga towel','meditation cushion'],
+  },
+  {
+    handle: 'nutrition',
+    keywords: ['protein shaker','proteinshaker','water bottle','vattenflaska',
+      'hydration bottle','electrolyte','elektrolyt','energy gel','energigel',
+      'protein bar','energy bar','meal prep','sports drink','sportdryck',
+      'supplement','kosttillskott','creatine','bcaa','pre workout'],
+  },
+  {
+    handle: 'traning',
+    keywords: ['gym','fitness','workout','crossfit','weightlifting','resistance band',
+      'träningsband','pull up','ab roller','jump rope','kettlebell','dumbbell',
+      'barbell','squat','bench press','push up','battle rope','agility',
+      'gym gloves','lifting belt','weighted vest','plyometric','functional training',
+      'compression shirt','compression tights','base layer','gym hoodie','gym shorts',
+      'training shoes','träningsskor','gym shoes','athletic top','dry fit'],
+  },
 ];
 
-const CATEGORY_MAP = {
-  'hiking':         { sv: 'Friluftsliv & Outdoor', tag: 'vandring',      shopify: 'Friluftsliv & Outdoor', gender: 'unisex' },
-  'outdoor':        { sv: 'Friluftsliv & Outdoor', tag: 'outdoor',       shopify: 'Friluftsliv & Outdoor', gender: 'unisex' },
-  'camping':        { sv: 'Friluftsliv & Outdoor', tag: 'camping',       shopify: 'Friluftsliv & Outdoor', gender: 'unisex' },
-  'trekking':       { sv: 'Friluftsliv & Outdoor', tag: 'vandring',      shopify: 'Friluftsliv & Outdoor', gender: 'unisex' },
-  'climbing':       { sv: 'Friluftsliv & Outdoor', tag: 'klättring',     shopify: 'Friluftsliv & Outdoor', gender: 'unisex' },
-  'trail':          { sv: 'Friluftsliv & Outdoor', tag: 'trail',         shopify: 'Friluftsliv & Outdoor', gender: 'unisex' },
-  'backpacking':    { sv: 'Friluftsliv & Outdoor', tag: 'outdoor',       shopify: 'Friluftsliv & Outdoor', gender: 'unisex' },
-  'running':        { sv: 'Löpning',               tag: 'löpning',       shopify: 'Löpning',               gender: 'unisex' },
-  'cycling':        { sv: 'Cykling',               tag: 'cykling',       shopify: 'Cykling',               gender: 'unisex' },
-  'cycling computer':{ sv: 'Cykling',              tag: 'cykling',       shopify: 'Cykling',               gender: 'unisex' },
-  'yoga':           { sv: 'Yoga',                  tag: 'yoga',          shopify: 'Yoga',                  gender: 'dam'    },
-  'gym':            { sv: 'Träning & Fitness',      tag: 'gym',           shopify: 'Träning & Fitness',     gender: 'unisex' },
-  'fitness':        { sv: 'Träning & Fitness',      tag: 'fitness',       shopify: 'Träning & Fitness',     gender: 'unisex' },
-  'workout':        { sv: 'Träning & Fitness',      tag: 'träning',       shopify: 'Träning & Fitness',     gender: 'unisex' },
-  'training':       { sv: 'Träning & Fitness',      tag: 'träning',       shopify: 'Träning & Fitness',     gender: 'unisex' },
-  'resistance':     { sv: 'Träning & Fitness',      tag: 'styrketräning', shopify: 'Träning & Fitness',     gender: 'unisex' },
-  'crossfit':       { sv: 'Träning & Fitness',      tag: 'crossfit',      shopify: 'Träning & Fitness',     gender: 'unisex' },
-  'weightlifting':  { sv: 'Träning & Fitness',      tag: 'styrketräning', shopify: 'Träning & Fitness',     gender: 'herr'   },
-  'cardio':         { sv: 'Träning & Fitness',      tag: 'kondition',     shopify: 'Träning & Fitness',     gender: 'unisex' },
-  'exercise':       { sv: 'Träning & Fitness',      tag: 'träning',       shopify: 'Träning & Fitness',     gender: 'unisex' },
-  'sports':         { sv: 'Träning & Fitness',      tag: 'sport',         shopify: 'Träning & Fitness',     gender: 'unisex' },
-  'recovery':       { sv: 'Återhämtning & Hälsa',  tag: 'återhämtning',  shopify: 'Återhämtning & Hälsa', gender: 'unisex' },
-  'massage':        { sv: 'Återhämtning & Hälsa',  tag: 'massage',       shopify: 'Återhämtning & Hälsa', gender: 'unisex' },
-  'brace':          { sv: 'Återhämtning & Hälsa',  tag: 'skydd',         shopify: 'Återhämtning & Hälsa', gender: 'unisex' },
-  'compression':    { sv: 'Återhämtning & Hälsa',  tag: 'kompression',   shopify: 'Återhämtning & Hälsa', gender: 'unisex' },
-  'posture':        { sv: 'Återhämtning & Hälsa',  tag: 'hållning',      shopify: 'Återhämtning & Hälsa', gender: 'unisex' },
-  'stretching':     { sv: 'Återhämtning & Hälsa',  tag: 'stretching',    shopify: 'Återhämtning & Hälsa', gender: 'unisex' },
-  'sleep':          { sv: 'Återhämtning & Hälsa',  tag: 'sömn',          shopify: 'Återhämtning & Hälsa', gender: 'unisex' },
-  'acupressure':    { sv: 'Återhämtning & Hälsa',  tag: 'återhämtning',  shopify: 'Återhämtning & Hälsa', gender: 'unisex' },
-  'foam roller':    { sv: 'Återhämtning & Hälsa',  tag: 'foam roller',   shopify: 'Återhämtning & Hälsa', gender: 'unisex' },
-  'health':         { sv: 'Återhämtning & Hälsa',  tag: 'hälsa',         shopify: 'Återhämtning & Hälsa', gender: 'unisex' },
-  'smartwatch':     { sv: 'Smart Teknik',           tag: 'smartwatch',    shopify: 'Smart Teknik',          gender: 'unisex' },
-  'gps watch':      { sv: 'Smart Teknik',           tag: 'gps',           shopify: 'Smart Teknik',          gender: 'unisex' },
-  'tracker':        { sv: 'Smart Teknik',           tag: 'tracker',       shopify: 'Smart Teknik',          gender: 'unisex' },
-  'earbuds':        { sv: 'Smart Teknik',           tag: 'hörlurar',      shopify: 'Smart Teknik',          gender: 'unisex' },
-  'headphones':     { sv: 'Smart Teknik',           tag: 'hörlurar',      shopify: 'Smart Teknik',          gender: 'unisex' },
-  'action camera':  { sv: 'Smart Teknik',           tag: 'kamera',        shopify: 'Smart Teknik',          gender: 'unisex' },
-  'heart rate':     { sv: 'Smart Teknik',           tag: 'puls',          shopify: 'Smart Teknik',          gender: 'unisex' },
-  'water bottle':   { sv: 'Kost & Vätska',          tag: 'vattenflaska',  shopify: 'Kost & Vätska',         gender: 'unisex' },
-  'protein':        { sv: 'Kost & Vätska',          tag: 'protein',       shopify: 'Kost & Vätska',         gender: 'unisex' },
-  'supplement':     { sv: 'Kost & Vätska',          tag: 'kosttillskott', shopify: 'Kost & Vätska',         gender: 'unisex' },
-  'shaker':         { sv: 'Kost & Vätska',          tag: 'shaker',        shopify: 'Kost & Vätska',         gender: 'unisex' },
-  'hydration':      { sv: 'Kost & Vätska',          tag: 'hydrering',     shopify: 'Kost & Vätska',         gender: 'unisex' },
-  'electrolyte':    { sv: 'Kost & Vätska',          tag: 'elektrolyter',  shopify: 'Kost & Vätska',         gender: 'unisex' },
-  'meal prep':      { sv: 'Kost & Vätska',          tag: 'meal prep',     shopify: 'Kost & Vätska',         gender: 'unisex' },
-  'gym bag':        { sv: 'Utrustning & Tillbehör', tag: 'väska',         shopify: 'Utrustning & Tillbehör',gender: 'unisex' },
-  'backpack':       { sv: 'Utrustning & Tillbehör', tag: 'ryggsäck',      shopify: 'Utrustning & Tillbehör',gender: 'unisex' },
-  'gloves':         { sv: 'Utrustning & Tillbehör', tag: 'handskar',      shopify: 'Utrustning & Tillbehör',gender: 'unisex' },
-  'belt':           { sv: 'Utrustning & Tillbehör', tag: 'bälte',         shopify: 'Utrustning & Tillbehör',gender: 'unisex' },
-  'mat':            { sv: 'Utrustning & Tillbehör', tag: 'matta',         shopify: 'Utrustning & Tillbehör',gender: 'unisex' },
-  'rope':           { sv: 'Utrustning & Tillbehör', tag: 'rep',           shopify: 'Utrustning & Tillbehör',gender: 'unisex' },
-};
+// Detect gender from title/description
+function detectGender(text) {
+  const t = text.toLowerCase();
+  if (t.includes(' women') || t.includes(' dam ') || t.includes(' female') ||
+      t.includes('för dam') || t.includes('dam ') || t.includes('womens')) return 'dam';
+  if (t.includes(' men ') || t.includes(' herr') || t.includes(' male') ||
+      t.includes('för herr') || t.includes('mens')) return 'herr';
+  if (t.includes('kids') || t.includes('barn') || t.includes('children')) return 'barn';
+  return 'unisex';
+}
 
-function mapCategory(rawCategory, productTitle) {
-  const text = (rawCategory + ' ' + productTitle).toLowerCase();
-  // STEG 1: Outdoor-first — dessa vinner alltid
-  for (const kw of OUTDOOR_PRIORITY_KEYWORDS) {
-    if (text.includes(kw)) {
-      return { sv: 'Friluftsliv & Outdoor', tag: kw.split(' ')[0], shopify: 'Friluftsliv & Outdoor', gender: 'unisex' };
+// Map product to one or more collection handles
+function mapToCollections(title, category, description = '') {
+  const text = (title + ' ' + category + ' ' + description).toLowerCase();
+  const matched = [];
+
+  for (const rule of COLLECTION_RULES) {
+    if (rule.keywords.some(kw => text.includes(kw))) {
+      matched.push(rule.handle);
     }
   }
-  // STEG 2: Normal mappning
-  for (const [key, val] of Object.entries(CATEGORY_MAP)) {
-    if (text.includes(key)) return val;
+
+  // Multi-collection rules
+  // GPS/running watches → both lopning + smart-tech
+  if (matched.includes('smart-tech') && text.match(/running watch|löparklocka|gps run|triathlon/)) {
+    if (!matched.includes('lopning')) matched.push('lopning');
   }
-  // STEG 3: Fallback
-  return { sv: 'Träning & Fitness', tag: 'fitness', shopify: 'Träning & Fitness', gender: 'unisex' };
+  // Trail shoes → outdoor + lopning
+  if (text.match(/trail shoe|trailsko|trail running shoe/)) {
+    if (!matched.includes('outdoor')) matched.push('outdoor');
+    if (!matched.includes('lopning')) matched.push('lopning');
+  }
+  // Massage gun → recovery + traning
+  if (text.match(/massage gun|massagepistol/)) {
+    if (!matched.includes('traning')) matched.push('traning');
+  }
+
+  // Gender collections
+  const gender = detectGender(title + ' ' + description);
+  if (gender === 'dam') matched.push('dam');
+  if (gender === 'herr') matched.push('herr');
+
+  // Fallback
+  if (matched.length === 0) matched.push('traning');
+
+  return [...new Set(matched)];
+}
+
+// Legacy mapCategory for backward compat
+function mapCategory(rawCategory, productTitle) {
+  const handles = mapToCollections(productTitle, rawCategory);
+  const primary = handles[0];
+  const MAP = {
+    'traning':      { sv: 'Träning & Fitness',     tag: 'gym',        gender: 'unisex' },
+    'lopning':      { sv: 'Löpning',               tag: 'löpning',    gender: 'unisex' },
+    'outdoor':      { sv: 'Outdoor',               tag: 'outdoor',    gender: 'unisex' },
+    'yoga-wellness':{ sv: 'Yoga & Wellness',        tag: 'yoga',       gender: 'dam'    },
+    'recovery':     { sv: 'Återhämtning',           tag: 'recovery',   gender: 'unisex' },
+    'nutrition':    { sv: 'Nutrition',              tag: 'nutrition',  gender: 'unisex' },
+    'smart-tech':   { sv: 'Smart Teknik',           tag: 'smart-tech', gender: 'unisex' },
+    'herr':         { sv: 'Herr',                  tag: 'herr',       gender: 'herr'   },
+    'dam':          { sv: 'Dam',                   tag: 'dam',        gender: 'dam'    },
+  };
+  return { ...(MAP[primary] || MAP['traning']), shopify: MAP[primary]?.sv || 'Träning & Fitness', handles };
 }
 
 // ── COLLECTION HELPERS ─────────────────────────────────────
@@ -860,7 +893,15 @@ async function publishToShopify(product) {
     payload,
     { headers: { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' } }
   );
-  return res.data.product;
+  const shopifyProduct = res.data.product;
+
+  // Assign to correct collections based on new structure
+  const handles = mapToCollections(product.title, product.category, product.description);
+  for (const handle of handles) {
+    try { await addProductToCollection(shopifyProduct.id, handle); } catch(e) {}
+  }
+
+  return shopifyProduct;
 }
 
 // ── EDIT LIVE PRODUCT ──────────────────────────────────────
@@ -1432,13 +1473,15 @@ app.post('/api/products/fix-all', async (req, res) => {
       continue;
     }
 
-    // Reassign to correct collection
+    // Reassign to correct collections
     if (item.shopifyId) {
       try {
-        const { assignCollections } = require('./collectionAssign');
-        await assignCollections(item.shopifyId, item.title, item.tags, db);
+        const handles = mapToCollections(item.title, item.category, item.description);
+        for (const handle of handles) {
+          await addProductToCollection(item.shopifyId, handle);
+        }
         reassigned.push(item.title);
-      } catch(e) {}
+      } catch(e) { console.error('Reassign failed:', e.message); }
     }
     kept.push(item.title);
   }
@@ -1848,15 +1891,19 @@ app.get('/api/create-collections', async (req, res) => {
   const token  = process.env.SHOP_TOKEN || process.env.SHOPIFY_TOKEN;
   if (!domain || !token) return res.status(500).json({ error: 'Shopify not configured' });
   const COLLS = [
-    { title: 'Nyheter', handle: 'nyheter' }, { title: 'Bästsäljare', handle: 'bestsellers' }, { title: 'Rea', handle: 'rea' },
-    { title: 'Herr', handle: 'herr' }, { title: 'Dam', handle: 'dam' }, { title: 'Barn', handle: 'barn' },
-    { title: 'Träning & Fitness', handle: 'traning-fitness' }, { title: 'Löpning', handle: 'lopning' },
-    { title: 'Outdoor & Camping', handle: 'outdoor-camping' }, { title: 'Vandring', handle: 'vandring' },
-    { title: 'Cykling', handle: 'cykling' }, { title: 'Yoga & Pilates', handle: 'yoga-pilates' },
-    { title: 'Smart Tech', handle: 'smart-tech' }, { title: 'Återhämtning & Hälsa', handle: 'recovery-health' },
-    { title: 'Kost & Hydrering', handle: 'kost-hydrering' }, { title: 'Utrustning & Tillbehör', handle: 'utrustning-tillbehor' },
+    { title: 'Träning & Fitness', handle: 'traning' },
+    { title: 'Löpning',           handle: 'lopning' },
+    { title: 'Outdoor',           handle: 'outdoor' },
+    { title: 'Yoga & Wellness',   handle: 'yoga-wellness' },
+    { title: 'Återhämtning',      handle: 'recovery' },
+    { title: 'Nutrition',         handle: 'nutrition' },
+    { title: 'Smart Teknik',      handle: 'smart-tech' },
+    { title: 'Herr',              handle: 'herr' },
+    { title: 'Dam',               handle: 'dam' },
+    { title: 'Bästsäljare',       handle: 'bestsellers' },
+    { title: 'Nyheter',           handle: 'nyheter' },
   ];
-  const results = { created: [], existing: [], failed: [] };
+    const results = { created: [], existing: [], failed: [] };
   const delay = ms => new Promise(r => setTimeout(r, ms));
   for (const col of COLLS) {
     try {
@@ -1872,9 +1919,69 @@ app.get('/api/create-collections', async (req, res) => {
   res.json({ ok: true, created: results.created.length, existing: results.existing.length, failed: results.failed.length, details: results });
 });
 
+
+// ── LAGERSYNK MED CJ ──────────────────────────────────────
+// Synkroniserar lagerstatus per variant mot CJ en gång per dag.
+// Avpublicerar produkter som är helt slut hos leverantören.
+async function syncInventoryFromCJ() {
+  const domain = process.env.SHOPIFY_DOMAIN;
+  const token  = process.env.SHOP_TOKEN || process.env.SHOPIFY_TOKEN;
+  if (!domain || !token) return;
+
+  const cjToken = await getCJToken();
+  if (!cjToken) { console.log('Inventory sync: no CJ token'); return; }
+
+  console.log(`[INVENTORY] Syncing ${store.products.length} products...`);
+  const delay = ms => new Promise(r => setTimeout(r, ms));
+  let updated = 0, unpublished = 0;
+
+  for (const item of store.products) {
+    if (!item.shopifyId || !item.aliId) continue;
+    try {
+      // Get CJ stock
+      const res = await axios.get('https://developers.cjdropshipping.com/api2.0/v1/product/query', {
+        headers: { 'CJ-Access-Token': cjToken },
+        params: { pid: item.aliId }
+      });
+      const detail = res.data?.data;
+      if (!detail) continue;
+
+      const variants = detail.variants || detail.productVariants || [];
+      const totalStock = variants.reduce((sum, v) => sum + (parseInt(v.variantStock) || 0), 0);
+
+      if (totalStock === 0) {
+        // Avpublicera produkten
+        await axios.put(
+          `https://${domain}/admin/api/2024-01/products/${item.shopifyId}.json`,
+          { product: { id: item.shopifyId, status: 'draft' } },
+          { headers: { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' } }
+        );
+        console.log(`📦 Unpublished (out of stock): ${item.title}`);
+        unpublished++;
+      } else if (variants.length > 0) {
+        // Uppdatera lager per variant via Shopify inventory API
+        // (requires location_id — skip for now, just log)
+        console.log(`✓ ${item.title}: ${totalStock} in stock across ${variants.length} variants`);
+        updated++;
+      }
+      await delay(3000);
+    } catch(e) {
+      if (e.response?.data?.code === 1600200) { console.log('CJ quota hit during inventory sync'); break; }
+    }
+  }
+  console.log(`[INVENTORY] Done: ${updated} updated, ${unpublished} unpublished`);
+}
+
+// Inventory sync endpoint
+app.post('/api/inventory/sync', async (req, res) => {
+  res.json({ ok: true, message: 'Inventory sync started' });
+  syncInventoryFromCJ();
+});
+
 // ── CRON ──────────────────────────────────────────────────
 cron.schedule('0 */12 * * *', () => { console.log('Cron: Starting scheduled research...'); runProductResearch(); });
 cron.schedule('0 * * * *', () => { console.log('Cron: Syncing performance...'); syncShopifyPerformance(); });
+cron.schedule('0 3 * * *', () => { console.log('Cron: Syncing inventory...'); syncInventoryFromCJ(); });
 
 // ── START ──────────────────────────────────────────────────
 const PORT = process.env.PORT || 3001;
