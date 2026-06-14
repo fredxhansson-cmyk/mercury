@@ -1694,6 +1694,102 @@ app.post('/api/regenerate/:id', async (req, res) => {
 
 
 
+
+// ── GENERERA KOLLEKTIONSBILDER MED DALL-E 3 ───────────────
+const COLLECTION_IMAGE_PROMPTS = {
+  'traning': 'Professional sports photography, dramatic gym interior, person doing intense weightlifting with barbells, dark moody lighting with rim light, sweat visible, determination on face, cinematic quality, ultra realistic, 16:9',
+  'lopning': 'Professional sports photography, lone runner on misty forest trail at golden hour, motion blur on feet, dramatic side lighting, premium athletic wear, cinematic quality, ultra realistic, 16:9',
+  'outdoor': 'Professional outdoor photography, person with backpack standing on mountain summit at sunrise, dramatic sky, fjord landscape, adventure spirit, cinematic quality, ultra realistic, 16:9',
+  'yoga-wellness': 'Professional wellness photography, woman doing yoga warrior pose on wooden deck overlooking calm lake at sunrise, soft warm light, premium yoga mat, peaceful atmosphere, cinematic quality, 16:9',
+  'recovery': 'Professional sports photography, athlete applying ice therapy on knee after training, dramatic studio lighting, clinical yet aspirational feel, premium recovery equipment visible, cinematic quality, 16:9',
+  'nutrition': 'Professional product photography, premium sports water bottles and protein shakers arranged artfully, dark background, dramatic studio lighting, water droplets, cinematic quality, 16:9',
+  'smart-tech': 'Professional tech photography, close-up of GPS smartwatch on wrist of athlete running, heart rate visible on screen, motion blur background, dark moody lighting, cinematic quality, 16:9',
+  'herr': 'Professional fashion sports photography, athletic man in premium training outfit running in urban environment at dusk, dramatic lighting, confident expression, cinematic quality, 16:9',
+  'dam': 'Professional fashion sports photography, athletic woman in premium training outfit doing trail running at sunrise, empowered expression, dramatic mountain backdrop, cinematic quality, 16:9',
+};
+
+app.post('/api/collections/generate-images', async (req, res) => {
+  const domain = process.env.SHOPIFY_DOMAIN;
+  const token  = process.env.SHOP_TOKEN || process.env.SHOPIFY_TOKEN;
+  const { collections } = req.body || {};
+
+  if (!domain || !token) return res.status(500).json({ error: 'Shopify ej konfigurerat' });
+  if (!process.env.OPENAI_API_KEY) return res.status(500).json({ error: 'OpenAI API key saknas' });
+
+  const targets = collections
+    ? Object.entries(COLLECTION_IMAGE_PROMPTS).filter(([k]) => collections.includes(k))
+    : Object.entries(COLLECTION_IMAGE_PROMPTS);
+
+  res.json({ ok: true, message: `Genererar ${targets.length} kollektionsbilder med DALL-E 3...`, total: targets.length });
+
+  (async () => {
+    const delay = ms => new Promise(r => setTimeout(r, ms));
+    const results = [];
+
+    for (const [handle, prompt] of targets) {
+      try {
+        console.log(`[DALL-E] Generating image for: ${handle}`);
+
+        // Generate image with DALL-E 3
+        const imageRes = await openai.images.generate({
+          model: 'dall-e-3',
+          prompt,
+          n: 1,
+          size: '1792x1024',
+          quality: 'hd',
+          style: 'natural',
+        });
+
+        const imageUrl = imageRes.data[0].url;
+        console.log(`[DALL-E] ✓ Generated: ${handle} → ${imageUrl.slice(0,60)}...`);
+
+        // Find collection in Shopify by handle
+        const colRes = await axios.get(
+          `https://${domain}/admin/api/2024-01/custom_collections.json?handle=${handle}`,
+          { headers: { 'X-Shopify-Access-Token': token } }
+        );
+        const collection = colRes.data.custom_collections?.[0];
+
+        if (!collection) {
+          console.log(`[DALL-E] Collection not found: ${handle}`);
+          results.push({ handle, status: 'collection_not_found' });
+          continue;
+        }
+
+        // Download image and convert to base64
+        const imgDownload = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+        const base64 = Buffer.from(imgDownload.data).toString('base64');
+
+        // Upload image to Shopify collection
+        await axios.put(
+          `https://${domain}/admin/api/2024-01/custom_collections/${collection.id}.json`,
+          {
+            custom_collection: {
+              id: collection.id,
+              image: {
+                attachment: base64,
+                filename: `${handle}-hero.jpg`,
+                alt: `${handle} kollektion`
+              }
+            }
+          },
+          { headers: { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' } }
+        );
+
+        console.log(`[DALL-E] ✓ Uploaded to Shopify: ${handle}`);
+        results.push({ handle, status: 'success' });
+        await delay(3000); // Rate limit between DALL-E calls
+
+      } catch(e) {
+        console.error(`[DALL-E] Failed: ${handle}`, e.message);
+        results.push({ handle, status: 'failed', error: e.message });
+      }
+    }
+
+    console.log('[DALL-E] All done:', results);
+  })();
+});
+
 // ── PUBLICERA ALLA PRODUKTER TILL ONLINE STORE ────────────
 // Fixar produkter som är aktiva i Shopify men inte syns på meloni.se
 app.post('/api/products/publish-all', async (req, res) => {
