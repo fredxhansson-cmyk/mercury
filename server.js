@@ -907,7 +907,32 @@ async function publishToShopify(product) {
   );
   const shopifyProduct = res.data.product;
 
-  // Assign to correct collections based on new structure
+  // ── Publicera till Online Store-kanalen ──────────────────
+  // Utan detta syns produkten inte på meloni.se trots att den är "Aktiv"
+  try {
+    // Hämta publications (försäljningskanaler)
+    const pubRes = await axios.get(
+      `https://${domain}/admin/api/2024-01/publications.json`,
+      { headers: { 'X-Shopify-Access-Token': token } }
+    );
+    const publications = pubRes.data?.publications || [];
+    // Hitta Online Store-kanalen
+    const onlineStore = publications.find(p =>
+      p.name === 'Online Store' || p.name === 'Webbshop' || p.label === 'online_store'
+    );
+    if (onlineStore) {
+      await axios.put(
+        `https://${domain}/admin/api/2024-01/products/${shopifyProduct.id}/publications.json`,
+        { publication: { publication_id: onlineStore.id } },
+        { headers: { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' } }
+      );
+      console.log(`✓ Published to Online Store: ${shopifyProduct.title}`);
+    }
+  } catch(e) {
+    console.error('Publication to Online Store failed (non-blocking):', e.message);
+  }
+
+  // ── Tilldela kollektioner ────────────────────────────────
   const handles = mapToCollections(product.title, product.category, product.description);
   for (const handle of handles) {
     try { await addProductToCollection(shopifyProduct.id, handle); } catch(e) {}
@@ -1692,6 +1717,53 @@ app.post('/api/regenerate/:id', async (req, res) => {
   } catch(err) { res.status(500).json({ error: err.message }); }
 });
 
+
+
+// ── PUBLICERA ALLA PRODUKTER TILL ONLINE STORE ────────────
+// Fixar produkter som är aktiva i Shopify men inte syns på meloni.se
+app.post('/api/products/publish-all', async (req, res) => {
+  const domain = process.env.SHOPIFY_DOMAIN;
+  const token  = process.env.SHOP_TOKEN || process.env.SHOPIFY_TOKEN;
+  if (!domain || !token) return res.status(500).json({ error: 'Shopify ej konfigurerat' });
+
+  try {
+    // Hämta Online Store publication ID
+    const pubRes = await axios.get(
+      `https://${domain}/admin/api/2024-01/publications.json`,
+      { headers: { 'X-Shopify-Access-Token': token } }
+    );
+    const publications = pubRes.data?.publications || [];
+    const onlineStore = publications.find(p =>
+      p.name === 'Online Store' || p.name === 'Webbshop' || p.label === 'online_store'
+    );
+
+    if (!onlineStore) {
+      return res.status(404).json({ error: 'Online Store-kanal hittades inte', publications: publications.map(p => p.name) });
+    }
+
+    const products = store.products.filter(p => p.shopifyId);
+    res.json({ ok: true, message: `Publicerar ${products.length} produkter till Online Store...`, publicationId: onlineStore.id });
+
+    (async () => {
+      const delay = ms => new Promise(r => setTimeout(r, ms));
+      let published = 0;
+      for (const item of products) {
+        try {
+          await axios.put(
+            `https://${domain}/admin/api/2024-01/products/${item.shopifyId}/publications.json`,
+            { publication: { publication_id: onlineStore.id } },
+            { headers: { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' } }
+          );
+          published++;
+          await delay(300);
+        } catch(e) { console.error(`Publish failed: ${item.title}`, e.message); }
+      }
+      console.log(`[PUBLISH-ALL] Done: ${published}/${products.length}`);
+    })();
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
 // ── RENSA KÖ OCH LIVE-PRODUKTER ───────────────────────────
 // Tar bort allt som inte klarar det hårdare filtret
