@@ -673,10 +673,18 @@ function isProductBlocked(product) {
   if (title.length < 10) { console.log(`⛔ Title too short: "${title}"`); return true; }
 
   // ── STEG 5: WHITELIST — måste matcha minst ett sport/outdoor-keyword ──
-  const passesWhitelist = WHITELIST_KEYWORDS.some(kw => text.includes(kw));
+  // Vi använder rawTitle (CJ:s engelska titel) som är mer tillförlitlig än den svenska AI-titeln
+  const rawText = (product.rawTitle || product.nameEn || '').toLowerCase();
+  const fullText = text + ' ' + rawText;
+  const passesWhitelist = WHITELIST_KEYWORDS.some(kw => fullText.includes(kw));
   if (!passesWhitelist) {
-    console.log(`⛔ Failed whitelist: "${title}"`);
-    return true;
+    // Extra chans: om keyword som triggade sökningen är sport-relaterat → tillåt
+    const sportKeyword = (product.keyword || '').toLowerCase();
+    const keywordOk = WHITELIST_KEYWORDS.some(kw => sportKeyword.includes(kw));
+    if (!keywordOk) {
+      console.log(`⛔ Failed whitelist: "${title}" (raw: "${rawText.slice(0,50)}")`);
+      return true;
+    }
   }
 
   // ── STEG 6: Djur-override — blockeras även om whitelist passerades ──
@@ -780,9 +788,13 @@ async function getCJToken() {
 async function searchCJProducts(token, keyword, limit = 20) {
   if (cjQuotaExhausted) { console.log('CJ daily quota exhausted — skipping'); return []; }
   try {
+    // Rotate pages to avoid always getting same products
+    const pageNum = Math.floor(Math.random() * 4) + 1;
+    const orderOptions = ['ORDER_COUNT','PRICE','COMMENTS'];
+    const orderBy = orderOptions[Math.floor(Math.random() * orderOptions.length)];
     const res = await axios.get('https://developers.cjdropshipping.com/api2.0/v1/product/list', {
       headers: { 'CJ-Access-Token': token },
-      params: { productNameEn: keyword, pageNum: 1, pageSize: limit, orderBy: 'ORDER_COUNT', orderType: 'DESC' }
+      params: { productNameEn: keyword, pageNum, pageSize: limit, orderBy, orderType: 'DESC' }
     });
     const list = res.data?.data?.list || [];
     console.log(`CJ "${keyword}": ${list.length} results`);
@@ -1156,9 +1168,14 @@ async function runProductResearch(overrideKeywords = null) {
       const idExists = [...store.queue, ...store.products].find(p => p.aliId === String(product.itemId||product.productId||product.pid));
       if (idExists) { console.log(`⛔ Duplicate ID: ${product.title || product.nameEn}`); continue; }
 
-      const productTitle = (product.title||product.nameEn||'').toLowerCase().slice(0,30);
-      const titleExists = productTitle.length > 5 && [...store.queue, ...store.products].find(p => p.rawTitle?.toLowerCase().slice(0,30) === productTitle);
-      if (titleExists) { console.log(`⛔ Duplicate Title: ${product.title || product.nameEn}`); continue; }
+      // Dedup: check both CJ pid and title similarity
+      const rawT = (product.nameEn || product.title || '').toLowerCase();
+      const titleSlug = rawT.replace(/[^a-z0-9]/g,'').slice(0,25);
+      const titleExists = titleSlug.length > 8 && [...store.queue, ...store.products].find(p => {
+        const existing = (p.rawTitle||'').toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,25);
+        return existing === titleSlug;
+      });
+      if (titleExists) { console.log(`⛔ Duplicate: ${rawT.slice(0,40)}`); continue; }
 
       try {
         const fixUrl = u => u ? (u.startsWith('//') ? 'https:' + u : u) : null;
@@ -1218,7 +1235,17 @@ async function runProductResearch(overrideKeywords = null) {
           score: product.score, keyword: product.keyword,
           costPrice: costUsd, sellPrice: sellSek,
           margin: Math.round(((sellSek - costUsd*9.5) / sellSek) * 100),
-          category: product.productType || 'General',
+          category: (() => {
+            // CJ often returns ORDINARY_PRODUCT or SUPPLIER_SHIPPED_PRODUCT as category
+            // Use keyword + title to determine real category instead
+            const rawCat = product.productType || product.categoryName || '';
+            const genericCats = ['ORDINARY_PRODUCT','SUPPLIER_SHIPPED_PRODUCT','GENERAL','General',''];
+            if (genericCats.includes(rawCat)) {
+              const mapped = mapCategory(product.keyword || '', productName);
+              return mapped.sv || 'Träning & Fitness';
+            }
+            return rawCat;
+          })(),
           stock: 99, shippingDays: 14,
           images: images.slice(0,5),
           title: content.title || product.title,
