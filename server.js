@@ -907,31 +907,6 @@ async function publishToShopify(product) {
   );
   const shopifyProduct = res.data.product;
 
-  // ── Publicera till Online Store-kanalen ──────────────────
-  // Utan detta syns produkten inte på meloni.se trots att den är "Aktiv"
-  try {
-    // Hämta publications (försäljningskanaler)
-    const pubRes = await axios.get(
-      `https://${domain}/admin/api/2024-01/publications.json`,
-      { headers: { 'X-Shopify-Access-Token': token } }
-    );
-    const publications = pubRes.data?.publications || [];
-    // Hitta Online Store-kanalen
-    const onlineStore = publications.find(p =>
-      p.name === 'Online Store' || p.name === 'Webbshop' || p.label === 'online_store'
-    );
-    if (onlineStore) {
-      await axios.put(
-        `https://${domain}/admin/api/2024-01/products/${shopifyProduct.id}/publications.json`,
-        { publication: { publication_id: onlineStore.id } },
-        { headers: { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' } }
-      );
-      console.log(`✓ Published to Online Store: ${shopifyProduct.title}`);
-    }
-  } catch(e) {
-    console.error('Publication to Online Store failed (non-blocking):', e.message);
-  }
-
   // ── Tilldela kollektioner ────────────────────────────────
   const handles = mapToCollections(product.title, product.category, product.description);
   for (const handle of handles) {
