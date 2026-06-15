@@ -888,6 +888,9 @@ async function publishToShopify(product) {
       product_type: product.category,
       tags: product.tags?.join(','),
       status: 'active',
+      published: true,
+      published_at: new Date().toISOString(),
+      published_scope: 'web',
       variants,
       options: variants.length > 1 && variants[0].option1
         ? [{ name: 'Storlek', values: variants.map(v => v.option1) }]
@@ -1788,6 +1791,45 @@ app.post('/api/collections/generate-images', async (req, res) => {
 
     console.log('[DALL-E] All done:', results);
   })();
+});
+
+
+// ── AKTIVERA ALLA UTKAST-PRODUKTER ────────────────────────
+// Sätter status 'active' på alla produkter som är 'draft' i Shopify
+app.post('/api/products/activate-all', async (req, res) => {
+  const domain = process.env.SHOPIFY_DOMAIN;
+  const token  = process.env.SHOP_TOKEN || process.env.SHOPIFY_TOKEN;
+  if (!domain || !token) return res.status(500).json({ error: 'Shopify ej konfigurerat' });
+
+  try {
+    // Hämta alla draft-produkter från Shopify
+    const r = await axios.get(
+      `https://${domain}/admin/api/2024-01/products.json?status=draft&limit=250`,
+      { headers: { 'X-Shopify-Access-Token': token } }
+    );
+    const drafts = r.data.products || [];
+    res.json({ ok: true, message: `Aktiverar ${drafts.length} utkast-produkter...`, total: drafts.length });
+
+    (async () => {
+      const delay = ms => new Promise(r => setTimeout(r, ms));
+      let activated = 0;
+      for (const p of drafts) {
+        try {
+          await axios.put(
+            `https://${domain}/admin/api/2024-01/products/${p.id}.json`,
+            { product: { id: p.id, status: 'active', published: true, published_at: new Date().toISOString() } },
+            { headers: { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' } }
+          );
+          activated++;
+          console.log(`✓ Activated: ${p.title}`);
+          await delay(300);
+        } catch(e) { console.error(`Failed: ${p.title}`, e.message); }
+      }
+      console.log(`[ACTIVATE] Done: ${activated}/${drafts.length}`);
+    })();
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ── PUBLICERA ALLA PRODUKTER TILL ONLINE STORE ────────────
