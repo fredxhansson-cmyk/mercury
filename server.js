@@ -465,6 +465,22 @@ const SPORT_WHITELIST = [
   'insulated water bottle','termosflaska sport',
   'meal prep container sport',
 
+  // Sportkläder svenska termer
+  'träningsbyxor','träningsshorts','träningscapri','träningströja',
+  'träningsjacka','träningsset','träningstopp','träningslinne',
+  'sportig luvtröja','sport hoodie','sportig hoodie','sport luvtröja',
+  'yogaset','yoga set','yogabyxor','yogatights','yogashorts',
+  'träningskläder','sportkläder','aktivitetskläder',
+  'snabbtorkande','quick-dry sport','moisture wicking',
+  'kompressionshorts','kompressionströja','kompressionsbyxor',
+  'formande shorts sport','sport shorts','sport tights',
+  'löparset','cykelset','sport set',
+  'halvdragkedja träning','zip träning','sport zip',
+  'gym hoodie','gym sweatshirt','gym pullover',
+  'tränings hoodie','sport sweatshirt',
+  'ryggsäck aktiv','active backpack','sport ryggsäck',
+  'axelväska sport','sport bag women','sport shoulder bag',
+
   // Sport-accessoarer
   'swim goggle','simglasögon','swim cap','simkeps','swimming fin',
   'snorkel','diving mask','dykmask',
