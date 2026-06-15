@@ -163,86 +163,109 @@ function mapToCollections(title, category, description) {
     'action camera','actionkamera','running watch','triathlon watch','smart ring',
     'fitness watch','sport watch','bluetooth headphone','wireless earbud',
     'sports earbud','smartglasögon','smart glasses','ar glasses','ai glasses',
-    'open ear headphone','led ryggsäck','led-ryggsäck','silikonarmband',
-    'fitnessklocka','gps klocka','sporthörlurar','drönare','drone'];
+    'open ear headphone','silikonarmband','fitnessklocka','gps klocka',
+    'sporthörlurar','drönare','drone'];
   const isTech = techKW.some(k => text.includes(k));
   if (isTech) cols.push('smart-tech');
 
-  // 2. OUTDOOR
-  const outdoorKW = ['tent','tält','sleeping bag','sovsäck','sovdyna','sleeping pad',
-    'trekking pole','vandringsstav','hiking pole','camping stove','campingkök',
-    'camping lantern','campinglampa','headlamp','pannlampa','water filter',
-    'vattenfilter','carabiner','survival kit','emergency blanket','kayak','paddling'];
-  const hikingShoeKW = ['hiking boot','vandringskänga','vandringsskor','trekking boot',
-    'klätterskor'];
+  // 2. OUTDOOR — utrustning, INTE kläder eller skor
+  const outdoorEquipKW = ['tent','tält','sleeping bag','sovsäck','sovdyna',
+    'sleeping pad','trekking pole','vandringsstav','hiking pole','camping stove',
+    'campingkök','camping lantern','campinglampa','headlamp','pannlampa',
+    'water filter','vattenfilter','carabiner','survival kit','emergency blanket',
+    'kayak','paddling'];
+  const hikingShoeKW = ['hiking boot','vandringskänga','vandringsskor',
+    'trekking boot','klätterskor'];
   const isHikingShoe = hikingShoeKW.some(k => text.includes(k));
-  const isOutdoorBase = outdoorKW.some(k => text.includes(k));
   const isOutdoorPack = (
     (text.includes('ryggsäck') || text.includes('backpack')) &&
-    ['outdoor','vandring','hiking','trekking','camping','klättring'].some(k => text.includes(k))
+    ['outdoor','vandring','hiking','trekking','camping'].some(k => text.includes(k))
   );
-  const isOutdoor = (isOutdoorBase || isOutdoorPack || isHikingShoe) && !isTech;
+  const isOutdoor = (outdoorEquipKW.some(k => text.includes(k)) || isOutdoorPack || isHikingShoe) && !isTech;
   if (isOutdoor) cols.push('outdoor');
 
-  // 3. LÖPNING
+  // 3. LÖPNING — skor och accessoarer för löpning
   const runKW = ['running shoe','löparsko','löparskor','trail running shoe',
-    'road running','running jacket','löparjacka','running tights','löpartights',
-    'running shorts','löparshorts','hydration vest','running belt','löparbälte',
-    'löparmidjeväska','running cap','running sock','löparstrumpa','kolfiberplatta'];
+    'road running shoe','running jacket','löparjacka','running tights',
+    'löpartights','running shorts','löparshorts','hydration vest','running belt',
+    'löparbälte','löparmidjeväska','running cap','running sock','löparstrumpa',
+    'kolfiberplatta','löparskor'];
   const isRunning = (runKW.some(k => text.includes(k)) ||
     (text.includes('löpning') && !text.includes('pannlampa')))
     && !isHikingShoe && !isTech;
   if (isRunning) cols.push('lopning');
 
-  // 4. YOGA & WELLNESS
-  const yogaKW = ['yoga','pilates','meditation','yogamatta','yoga mat','yoga block',
-    'yoga strap','yogablock','mindfulness','bolster'];
+  // 4. YOGA & WELLNESS — mattor, block, yogakläder
+  const yogaKW = ['yoga','pilates','meditation','yogamatta','yoga mat',
+    'yoga block','yoga strap','yogablock','mindfulness','bolster'];
   if (yogaKW.some(k => text.includes(k))) cols.push('yoga-wellness');
 
-  // 5. RECOVERY
+  // 5. RECOVERY — massage, stöd, kompression
   const recoveryKW = ['massage gun','massagepistol','foam roller','skumrulle',
-    'massage ball','massageboll','knee brace','knästöd','ankle brace','ankelbandage',
-    'elbow brace','compression sleeve','ice bath','isbad','kinesio tape','sports tape',
-    'back stretcher','axelvärmare','shoulder massager','massageplatta','vibration plate',
-    'massagepaket','armtränare','arm trainer','andningsträna','breathing trainer',
-    'lungkapacitet'];
+    'massage ball','knee brace','knästöd','ankle brace','ankelbandage',
+    'elbow brace','compression sleeve','ice bath','isbad','kinesio tape',
+    'sports tape','back stretcher','axelvärmare','massageplatta','vibration plate',
+    'massagepaket','andningsträna','breathing trainer','lungkapacitet',
+    'nackstöd','neck support','ryggstöd','back support','lumbar',
+    'smärtlindring','pain relief'];
   const isRecovery = recoveryKW.some(k => text.includes(k)) && !isTech;
   if (isRecovery) cols.push('recovery');
 
-  // 6. NUTRITION
-  const nutritionKW = ['protein shaker','proteinshaker','water bottle','vattenflaska',
-    'hydration bottle','shaker bottle','electrolyte','energy gel','whey protein',
-    'vassleprotein','protein powder','proteinpulver','pre workout','bcaa','creatine',
-    'sports drink','sportdryck','meal prep','träningsflaska'];
+  // 6. NUTRITION — flaskor, shakers, kosttillskott (för människor)
+  const nutritionKW = ['protein shaker','proteinshaker','water bottle',
+    'vattenflaska','hydration bottle','shaker bottle','electrolyte','energy gel',
+    'whey protein','vassleprotein','protein powder','proteinpulver','pre workout',
+    'bcaa','creatine','kreatin','sports drink','sportdryck','meal prep',
+    'träningsflaska'];
   if (nutritionKW.some(k => text.includes(k))) cols.push('nutrition');
 
-  // 7. TRÄNING
-  const traningKW = ['resistance band','träningsband','pull up bar','ab roller',
-    'jump rope','kettlebell','dumbbell','barbell','gym gloves','lifting belt',
-    'lyftbälte','weightlifting','crossfit','battle rope','push up handles',
-    'gymväska','gym bag','träningsskor','training shoe','gym shoe','crossfit shoe',
-    'solskyddande jacka','solskyddsjakca','led-ryggsäck'];
-  const traningCtx = ['gym','styrketräning','crossfit'].some(k => text.includes(k));
-  const isClothing = ['jacket','jacka','tröja','shirt','shorts','byxor','leggings',
-    'tights','linne','hoodie','fleece','solskydd'].some(k => text.includes(k));
-  const isTraning = (traningKW.some(k => text.includes(k)) || traningCtx ||
-    (isClothing && !isOutdoor && !isRunning && !yogaKW.some(k=>text.includes(k))))
-    && !isOutdoor && !isHikingShoe && !isRunning && !isTech;
-  if (isTraning) cols.push('traning');
+  // 7. TRÄNING — BARA redskap och utrustning, INTE kläder
+  const traningEquipKW = ['resistance band','träningsband','pull up bar','ab roller',
+    'jump rope','hopprepet','kettlebell','dumbbell','hantel','barbell','skivstång',
+    'gym gloves','lifting belt','lyftbälte','weightlifting belt','crossfit',
+    'battle rope','push up handles','armtränare','arm trainer','mini cykel',
+    'träningscykel','spinning','stepmaskin','stepper','roddmaskin','gymväska',
+    'gym bag','träningsutrustning','gym equipment','punching bag','boxningssäck'];
+  const isTraningEquip = traningEquipKW.some(k => text.includes(k)) &&
+    !isOutdoor && !isHikingShoe && !isRunning && !isTech;
+  if (isTraningEquip) cols.push('traning');
 
-  // 8. KÖN
+  // 8. KÖN — kläder och skor hamnar under herr/dam
   const damKW = [' dam',' för dam','dam ','women',' hennes','för henne',
-    'damskor','damjacka','sport-bh','sportbh','tränings-bh'];
+    'damskor','damjacka','sport-bh','sportbh','tränings-bh','dam shorts',
+    'damtröja','dam leggings'];
   const herrKW = [' herr','för herr','herr ','herrskjorta','herrtröja',
     'herrbyxor','herrkänga','herrskor','för män','för herrar','herrstickad',
-    'herrtopp',' men '];
-  if (damKW.some(k => raw.includes(k))) cols.push('dam');
-  if (herrKW.some(k => raw.includes(k))) cols.push('herr');
+    'herrtopp','herr shorts','herr hoodie'];
+  const isDam = damKW.some(k => raw.includes(k));
+  const isHerr = herrKW.some(k => raw.includes(k));
+  if (isDam) cols.push('dam');
+  if (isHerr) cols.push('herr');
+
+  // Kläder utan könsmärkning → både herr och dam (eller träning om sport)
+  const isClothing = ['jacket','jacka','tröja','shirt','shorts','byxor',
+    'leggings','tights','linne','hoodie','fleece','träningskläder',
+    'sportkläder','atletisk'].some(k => text.includes(k));
+
+  // Om det är sportkläder utan kön → lägg i träning
+  const isSportClothing = isClothing && 
+    ['sport','träning','gym','athletic','performance','compression',
+     'dry fit','moisture'].some(k => text.includes(k)) &&
+    !isDam && !isHerr;
+  if (isSportClothing && !isRunning && !isOutdoor && !yogaKW.some(k=>text.includes(k))) {
+    cols.push('traning');
+  }
 
   // Fallback
-  if (cols.length === 0) cols.push('traning');
+  if (cols.length === 0) {
+    if (isClothing) cols.push('traning');
+    else cols.push('traning');
+  }
+
   return [...new Set(cols)];
 }
+
+
 
 function mapCategory(rawCategory, productTitle) {
   const handles = mapToCollections(productTitle, rawCategory, '');
@@ -313,79 +336,232 @@ async function addProductToCollection(productId, collectionName) {
 
 
 // ── CONTENT FILTER ────────────────────────────────────────
-const BLOCKED_KEYWORDS = [
-  // Adult/sexual
-  'sex','adult','erotic','porn','nude','vibrat','dildo','condom','penis','vagina',
-  // Weapons
-  'gun','weapon','sword','bullet','ammo','firearm','pistol','rifle','grenade',
-  // Drugs/alcohol  
-  'drug','cannabis','marijuana','cocaine','whiskey','whisky','beer','wine','vodka',
-  'cigarette','tobacco','vape','e-cigarette',
-  // Gambling
-  'gambling','casino','betting',
-  // Fakes
-  'fake','replica','counterfeit',
-  // Car/auto parts (not relevant)
-  'speedometer','glovebox','car mat clip','windshield','dashboard clip',
-  // Home decor (not our niche)
-  'curtain','tablecloth','wall sticker','picture frame','vase','candle holder',
-  // Pet clothing
-  'pet dress','dog dress','cat costume',
-  // Beauty/makeup (not our niche unless recovery/health)
-  'lipstick','mascara','foundation','eyeshadow','nail polish','eyelash',
-  // Fashion accessories (not sport)
-  'high heel','stiletto','evening dress','wedding dress','tuxedo',
+// ── PRODUKTFILTER — WHITELIST-FIRST ──────────────────────
+// Principen: produkten MÅSTE aktivt bevisa att den hör till
+// sport / träning / friluftsliv / återhämtning / aktiv hälsa.
+// Allt annat blockeras — oavsett hur titeln är formulerad.
+
+// ── SPORT WHITELIST — måste matcha minst ett ──────────────
+const SPORT_WHITELIST = [
+  // Träningsutrustning
+  'resistance band','träningsband','motståndsband',
+  'pull up','chin up','dip bar','ab roller','sit up',
+  'jump rope','hopprepet','battle rope',
+  'kettlebell','dumbbell','hantel','barbell','skivstång','weight plate',
+  'gym gloves','träningshandskar','lifting belt','lyftbälte',
+  'push up','push-up','liggstöd',
+  'punching bag','boxningssäck','boxing glove','boxningshandske',
+  'speed bag','fokusvantar',
+  'rowing machine','roddmaskin','rowing',
+  'exercise bike','träningscykel','spinning bike','motionscykel',
+  'stepper','stepmaskin','elliptical','cross trainer',
+  'mini bike','mini cykel','pedal exerciser',
+  'pull rope','armtränare','arm trainer','chest expander',
+  'agility ladder','agility cone','sport cone',
+  'weighted vest','viktväst','ankle weight','handled weight',
+  'gym bag','gymväska','sports bag','duffel bag sport',
+  'gym towel','sport towel','microfiber towel sport',
+  'sport water bottle','vattenflaska sport','protein shaker','proteinshaker',
+  'shaker bottle','blender bottle',
+
+  // Löpning
+  'running shoe','löparsko','löparskor','trail running','road running',
+  'running jacket','löparjacka','running tights','löpartights',
+  'running shorts','löparshorts','running vest','löparväst',
+  'hydration vest','running belt','löparbälte','löparmidjeväska',
+  'running cap','running sock','löparstrumpa','running headband',
+  'carbon plate','kolfiberplatta','marathon shoe',
+  'trail shoe','trailsko',
+
+  // Sportkläder — aktivt kopplade till sport
+  'compression shirt','compression tights','compression leggings',
+  'compression shorts','base layer','thermal running',
+  'sport bra','sports bra','sport-bh','sportbh','tränings-bh',
+  'gym shirt','gym top','gym shorts','gym leggings','gym pants',
+  'training shorts','training tights','training jacket','training top',
+  'athletic shorts','athletic top','athletic leggings',
+  'workout shorts','workout top','workout leggings',
+  'dry fit','dri-fit','moisture wicking','quick dry sport',
+  'cycling jersey','cycling shorts','cycling tight','cycling jacket',
+  'cycling gloves','cycling shoe','cycling helmet',
+  'swimsuit','swim shorts','wetsuit','rash guard',
+  'ski jacket','ski pants','ski gloves','ski helmet','ski goggles',
+  'snowboard jacket','snowboard pants',
+
+  // Skor — aktivt sportkopplade
+  'training shoe','träningsskor','gym shoe','crossfit shoe',
+  'hiking boot','vandringskänga','vandringsskor','trekking boot',
+  'approach shoe','climbing shoe','klätterskor',
+  'cycling shoe','cykelsko',
+  'football boot','soccer cleat','rugby boot',
+
+  // Outdoor & Friluftsliv
+  'camping tent','tält','tent','backpacking tent',
+  'sleeping bag','sovsäck','sleeping pad','sovdyna','sleeping mat',
+  'trekking pole','vandringsstav','hiking pole','walking pole',
+  'hiking backpack','vandringryggsäck','trekking backpack',
+  'outdoor backpack','camping backpack','daypack',
+  'camping stove','camp stove','camping cookware','camping pot',
+  'camping lantern','headlamp','pannlampa','led headlamp',
+  'water filter','water purifier','vattenfilter',
+  'carabiner','climbing harness','climbing rope','belay device',
+  'survival kit','emergency blanket','fire starter',
+  'kayak paddle','paddling','canoe','kayak',
+  'bike helmet','cykelhjälm',
+  'bike light','cykellampa','cycling computer','cykeldator',
+  'bike bag','cykelväska','saddle bag',
+
+  // Yoga & Wellness
+  'yoga mat','yogamatta','yoga block','yogablock',
+  'yoga strap','yoga wheel','yoga towel',
+  'pilates ring','pilates mat','pilates sock',
+  'meditation cushion','meditation pillow','meditationsdyna',
+  'stretching strap','foam wedge yoga',
+
+  // Återhämtning
+  'massage gun','massagepistol','percussion massager',
+  'foam roller','skumrulle','massage roller',
+  'massage ball','lacrosse ball','trigger point',
+  'knee brace','knästöd','knee sleeve','knee support',
+  'ankle brace','ankle support','ankelbandage',
+  'elbow brace','wrist brace','handledsband',
+  'compression sleeve','calf sleeve','shin sleeve',
+  'ice bath','isbad','cold therapy','cold compress',
+  'heat therapy','heat pad','värmekudde sport',
+  'kinesio tape','sports tape','athletic tape',
+  'back stretcher','ryggstretchare','posture corrector',
+  'acupressure mat','nail mat',
+  'back brace','lumbar support','ryggstöd',
+  'neck traction','neck stretcher','nacksträckare',
+  'recovery sandal','recovery slide',
+  'breathing trainer','andningsträna','lung trainer',
+  'vibration plate','massageplatta','vibration board',
+  'shoulder massager','axelvärmare','neck massager','nackmassor',
+
+  // Smart Tech för aktiv livsstil
+  'smartwatch','smart watch','gps watch','running watch',
+  'fitness tracker','activity tracker','fitness band',
+  'heart rate monitor','pulsmätare','chest strap',
+  'sports earbuds','sporthörlurar','bone conduction',
+  'wireless sport earbuds','waterproof earbuds',
+  'open ear headphones','sport headphones',
+  'action camera','actionkamera','sports camera','helmet camera',
+  'cycling computer','cykeldator','bike computer',
+  'gps navigation outdoor','outdoor gps',
+  'smart ring','fitness ring',
+  'triathlon watch','multisport watch',
+  'cadence sensor','speed sensor bike',
+  'power meter cycling','bike radar',
+  'solar charger outdoor','camping power bank',
+  'sport sunglasses','löparglasögon',
+
+  // Nutrition & Hydrering
+  'electrolyte','elektrolyt','energy gel','energigel',
+  'energy bar sport','sportbar','protein bar',
+  'whey protein','vassleprotein','protein powder','proteinpulver',
+  'pre workout','bcaa','creatine','kreatin',
+  'sports drink','sportdryck','isotonic',
+  'hydration pack','camelbak','water bladder',
+  'insulated water bottle','termosflaska sport',
+  'meal prep container sport',
+
+  // Sport-accessoarer
+  'swim goggle','simglasögon','swim cap','simkeps','swimming fin',
+  'snorkel','diving mask','dykmask',
+  'golf glove','golf bag','golf ball','putting mat',
+  'tennis racket','squash racket','badminton racket',
+  'sport belt','running belt','waist pack running',
+  'reflective vest running','reflective jacket running',
+  'phone arm band running','phone holder running',
+  'sport watch band','klockband sport',
 ];
 
-// Niche validation — product must relate to at least one of these
-const NICHE_KEYWORDS = [
-  'sport','fitness','gym','workout','training','exercise','running','hiking',
-  'cycling','yoga','outdoor','camping','recovery','health','wellness',
-  'compression','resistance','muscle','cardio','athletic','active',
-  'trail','trekking','climbing','swimming','rowing','crossfit',
-  'stretching','mobility','flexibility','strength','endurance',
-  'nutrition','hydration','protein','supplement','electrolyte',
-  'smartwatch','gps','heart rate','tracker','monitor','sensor',
-  'waterproof','windproof','thermal','breathable','lightweight',
-  'löpning','träning','friluftsliv','vandring','cykling','återhämtning',
-  'sport','fitness','gym','hälsa','wellness','aktiv',
+// ── HARD BLOCK — dessa stoppas alltid oavsett whitelist ──
+const HARD_BLOCKED = [
+  // Bilar & fordon
+  'takräcke','roof rack','roof bar','car roof','crossbar','roof rail',
+  'car seat','car floor mat','car organizer','car charger','dash cam',
+  'windshield','steering wheel','obd','auto part','vehicle',
+  'motorcycle','moped','scooter part',
+
+  // Husdjur
+  'för katt','för hunden','för hundar','för husdjur','för djur',
+  'pet food','pet treat','cat food','dog food','bird food',
+  'cat toy','dog toy','pet collar','pet leash','pet carrier',
+  'pet supplement','pet vitamin','taurine för',
+  'aquarium','fish tank','bird cage','hamster',
+  'husdjur','sällskapsdjur','djurvård',
+
+  // Hem & Inredning
+  'home decor','home decoration','wall art','curtain','tablecloth',
+  'bedding','duvet','pillow case','mattress','sofa','couch',
+  'garden lamp','solar garden','planter','flower pot',
+  'mosquito killer','bug zapper','fly trap',
+  'shower curtain','bath mat','toilet','bathroom cleaner',
+  'kitchen knife','cutting board','cooking pot','frying pan',
+  'air fryer','coffee maker','blender','food processor',
+
+  // Skönhet & Hudvård
+  'skincare','skin care','face mask','face cream','serum',
+  'anti-aging','wrinkle','cleanser','toner','moisturizer',
+  'makeup','cosmetic','lipstick','mascara','foundation',
+  'nail polish','eyelash','hair mask','hair serum','hair oil',
+  'hair removal','epilator','body scrub','exfoliant',
+
+  // Mode & Vanliga kläder
+  'wedding dress','evening dress','cocktail dress','party dress',
+  'tuxedo','high heel','stiletto','fashion sneaker','casual sneaker',
+  'casual wear','streetwear','daily wear','fashion ring',
+  'necklace','earring','bracelet','jewelry','anklet',
+  'hair clip','scrunchie','hårsnodd',
+  'polo shirt fashion','knit sweater fashion',
+  'denim jacket','jeans','chinos',
+
+  // Baby & Barn (leksaker)
+  'baby bottle','baby diaper','pacifier','baby monitor',
+  'toy ','leksak','children toy','kids toy',
+  'trampoline','swing set','sandbox','slide',
+
+  // Övrigt
+  'gambling','casino','drug','weapon','firearm',
+  'cigarette','tobacco','vape','alcohol','whiskey',
+  'fake','replica','counterfeit',
+  'gaming keyboard','gaming mouse','gaming chair',
+  'office chair','desk lamp','laptop stand',
+  'led strip','smart bulb','smart plug',
+  'suitcase','luggage','travel bag fashion',
+  'picnic blanket','pool float','inflatable pool',
 ];
 
 function isProductBlocked(product) {
-  const text = [
-    product.title, product.nameEn, product.name,
-    product.categoryName, product.description
-  ].join(' ').toLowerCase();
-  
-  // Check blocked keywords
-  for (const kw of BLOCKED_KEYWORDS) {
-    if (text.includes(kw)) {
-      console.log(`⛔ Blocked: "${product.title||product.nameEn}" — keyword: "${kw}"`);
+  const title   = (product.title || product.nameEn || product.name || '').toLowerCase();
+  const rawTitle = (product.rawTitle || product.nameEn || '').toLowerCase();
+  const cat     = (product.categoryName || product.category || '').toLowerCase();
+  const desc    = (product.description || '').toLowerCase();
+  const fullText = title + ' ' + rawTitle + ' ' + cat + ' ' + desc;
+  const keyword  = (product.keyword || '').toLowerCase();
+
+  // ── STEG 1: Hard block — dessa stoppas alltid ──────────
+  for (const kw of HARD_BLOCKED) {
+    if (fullText.includes(kw)) {
+      console.log('Blocked: ' + kw + ' in: ' + title);
       return true;
     }
   }
 
-  // Block car/auto parts
-  const catText = (product.categoryName || '').toLowerCase();
-  if (catText.includes('automobile') || catText.includes('car care') || 
-      catText.includes('vehicle') || catText.includes('motor')) {
-    console.log(`⛔ Blocked auto category: "${product.title||product.nameEn}"`);
+  // ── STEG 2: Titeln för kort ────────────────────────────
+  if (title.length < 8) {
+    console.log('Title too short: ' + title);
     return true;
   }
 
-  // Block car brands
-  const carBrands = ['ford ','toyota ','honda ','bmw ','mercedes ','audi ','volkswagen '];
-  for (const brand of carBrands) {
-    if (text.includes(brand)) {
-      console.log(`⛔ Blocked car brand: "${product.title||product.nameEn}"`);
-      return true;
-    }
-  }
+  // ── STEG 3: Whitelist — måste matcha minst ett ─────────
+  // Kollar titel + råtitel + sökordet som triggade sökningen
+  const checkText = title + ' ' + rawTitle + ' ' + keyword;
+  const passesWhitelist = SPORT_WHITELIST.some(kw => checkText.includes(kw));
 
-  // NICHE CHECK — must match at least one fitness/outdoor/health keyword
-  const isNicheRelevant = NICHE_KEYWORDS.some(kw => text.includes(kw));
-  if (!isNicheRelevant) {
-    console.log(`⛔ Off-niche: "${product.title||product.nameEn}" — not fitness/outdoor/health`);
+  if (!passesWhitelist) {
+    console.log('Not sport: ' + title + ' raw: ' + rawTitle.slice(0,40));
     return true;
   }
 
