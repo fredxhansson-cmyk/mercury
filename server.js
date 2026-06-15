@@ -547,6 +547,23 @@ const HARD_BLOCKED = [
   'led strip','smart bulb','smart plug',
   'suitcase','luggage','travel bag fashion',
   'picnic blanket','pool float','inflatable pool',
+  // Möbler
+  'barstol','bar stool','bar chair','counter stool',
+  'dining chair','office chair','lounge chair',
+  // Klänningar & mode
+  'klänning','dress','kimono','kofta fashion',
+  'basker','beret','fascinator',
+  'clutch','tote bag fashion','shoulder bag fashion',
+  'crossbody bag fashion','business bag','student bag',
+  // Smycken
+  'silver ring','couple ring','matching ring',
+  'fine silver','925 silver','gold ring',
+  // Katt & husdjur
+  'kattkläder','cat vest','cat clothes','dog vest',
+  'för katten','för katter',
+  // Bil
+  'pontiac','strålkastare bil','headlight switch',
+  'firebird','trans am','car switch',
 
   // Kameror utan sport
   'övervakningskamera','surveillance camera','security camera','cctv',
@@ -598,7 +615,9 @@ function isProductBlocked(product) {
 
   // ── STEG 3: Whitelist — måste matcha minst ett ─────────
   // Kollar titel + råtitel + sökordet som triggade sökningen
-  const checkText = title + ' ' + rawTitle + ' ' + keyword;
+  // Only check title and rawTitle — NOT keyword
+  // Using keyword causes false positives (gym keyword → barstol passes)
+  const checkText = title + ' ' + rawTitle;
   const passesWhitelist = SPORT_WHITELIST.some(kw => checkText.includes(kw));
 
   if (!passesWhitelist) {
@@ -1992,6 +2011,34 @@ app.post('/api/seed', async (req, res) => {
 });
 
 
+
+
+// ── RENSA KÖN ─────────────────────────────────────────────
+app.post('/api/queue/clean', async (req, res) => {
+  const before = store.queue.length;
+  const removed = [];
+
+  store.queue = store.queue.filter(item => {
+    const blocked = isProductBlocked({
+      title: item.title,
+      nameEn: item.rawTitle,
+      rawTitle: item.rawTitle,
+      categoryName: item.category,
+      description: item.description,
+      keyword: '' // Don't use keyword in filter
+    });
+    if (blocked) { removed.push(item.title); return false; }
+    return true;
+  });
+
+  // Update DB
+  if (db) {
+    await db.query('DELETE FROM queue');
+    for (const item of store.queue) await dbSave('queue', item);
+  }
+
+  res.json({ ok: true, before, after: store.queue.length, removed: removed.length, titles: removed });
+});
 
 // ── RENSA LIVE-PRODUKTER ──────────────────────────────────
 app.post('/api/products/clean', async (req, res) => {
