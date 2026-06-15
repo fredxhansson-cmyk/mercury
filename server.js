@@ -1755,6 +1755,49 @@ app.post('/api/seed', async (req, res) => {
 });
 
 
+
+// ── RENSA LIVE-PRODUKTER ──────────────────────────────────
+app.post('/api/products/clean', async (req, res) => {
+  const domain = process.env.SHOPIFY_DOMAIN;
+  const token  = process.env.SHOP_TOKEN || process.env.SHOPIFY_TOKEN;
+  if (!domain || !token) return res.status(500).json({ error: 'Shopify ej konfigurerat' });
+
+  const before = store.products.length;
+  const removed = [];
+  const kept = [];
+
+  for (const item of [...store.products]) {
+    const blocked = isProductBlocked({
+      title: item.title,
+      nameEn: item.rawTitle,
+      rawTitle: item.rawTitle,
+      categoryName: item.category,
+      description: item.description,
+      keyword: item.keyword
+    });
+
+    if (blocked) {
+      // Ta bort från Shopify
+      if (item.shopifyId) {
+        try {
+          await axios.delete(
+            `https://${domain}/admin/api/2024-01/products/${item.shopifyId}.json`,
+            { headers: { 'X-Shopify-Access-Token': token } }
+          );
+          console.log('Deleted: ' + item.title);
+        } catch(e) { console.error('Delete failed: ' + item.title, e.message); }
+      }
+      store.products = store.products.filter(p => p.id !== item.id);
+      if (db) await dbDelete('products', item.id);
+      removed.push(item.title);
+    } else {
+      kept.push(item);
+    }
+  }
+
+  res.json({ ok: true, before, after: store.products.length, removed: removed.length, titles: removed });
+});
+
 // ── AKTIVERA ALLA UTKAST ──────────────────────────────────
 app.post('/api/products/activate-all', async (req, res) => {
   const domain = process.env.SHOPIFY_DOMAIN;
