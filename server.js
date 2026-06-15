@@ -919,7 +919,17 @@ async function publishToShopify(product) {
   );
   const shopifyProduct = res.data.product;
   // Assign to correct collections
-  const handles = mapToCollections(product.title, product.category, product.description);
+  // Use forced collection from seed if available, otherwise auto-detect
+  let handles;
+  if (product.forcedCollection) {
+    handles = [product.forcedCollection];
+    // Also add gender collection
+    const gender = mapToCollections(product.title, product.category, product.description)
+      .filter(h => h === 'herr' || h === 'dam');
+    handles = [...new Set([...handles, ...gender])];
+  } else {
+    handles = mapToCollections(product.title, product.category, product.description);
+  }
   for (const handle of handles) {
     try { await addProductToCollection(shopifyProduct.id, handle); } catch(e) {}
   }
@@ -1103,7 +1113,7 @@ const TREND_KEYWORDS = [
 ];
 
 // ── MAIN RESEARCH PIPELINE ─────────────────────────────────
-async function runProductResearch(overrideKeywords = null) {
+async function runProductResearch(overrideKeywords = null, seedCategory = null) {
   if (store.syncStatus === 'running') return;
   store.syncStatus = 'running';
   store.lastSync = new Date().toISOString();
@@ -1127,7 +1137,7 @@ async function runProductResearch(overrideKeywords = null) {
           const score = scoreAliProduct(p, i);
           if (score >= 40) {
             const item = p.item || p;
-            candidates.push({ ...item, score, keyword, source: 'aliexpress', _raw: p });
+            candidates.push({ ...item, score, keyword, seedCategory, source: 'aliexpress', _raw: p });
           }
         });
       }
@@ -1260,7 +1270,7 @@ async function runProductResearch(overrideKeywords = null) {
         }
 
         const costUsd = Math.max(2, parseFloat(product.sku?.def?.promotionPrice || product.sku?.def?.price || product.price?.minPrice || product.salePrice || 5));
-        const rawSek = Math.round(costUsd * 5 * 9.5); // 5x markup, USD to SEK
+        const rawSek = Math.round(costUsd * 2 * 9.5); // 2x markup ≈ 50% margin // 5x markup, USD to SEK
         const sellSek = snapPrice(rawSek);
 
         // Generate AI content
@@ -1702,289 +1712,485 @@ app.post('/api/research/keyword', async (req, res) => {
 app.post('/api/seed', async (req, res) => {
   const { categories, delay_ms = 8000 } = req.body || {};
 
-  // ── PRECISA KEYWORDS — varje sökning är specifik nog att CJ
-  // knappt kan returnera fel produkt. Kopplad till kollektion.
+  // ── KOMPLETTA SPORT/OUTDOOR/HÄLSA KEYWORDS ──────────────
+  // Varje keyword är specifikt nog att CJ knappt kan returnera fel produkt.
+  // Baserat på trendanalys 2026 + Melonis kategorier.
+  // Each category maps directly to a Shopify collection handle
+  const COLLECTION_MAP = {
+    'styrka-band': 'traning', 'styrka-redskap': 'traning',
+    'styrka-vikter': 'traning', 'styrka-skydd': 'traning',
+    'styrka-utrustning': 'traning', 'gym-maskin': 'traning',
+    'gym-tillbehor': 'traning',
+    'löpning-skor-herr': 'lopning', 'löpning-skor-dam': 'lopning',
+    'löpning-kläder-herr': 'lopning', 'löpning-kläder-dam': 'lopning',
+    'löpning-accessoarer': 'lopning',
+    'herr-gym-kläder': 'herr', 'herr-cykelkläder': 'herr',
+    'herr-outdoor-kläder': 'herr', 'herr-skor': 'herr',
+    'herr-accessoarer': 'herr',
+    'dam-träningskläder': 'dam', 'dam-sport-bh': 'dam',
+    'dam-yoga-kläder': 'dam', 'dam-outdoor-kläder': 'dam',
+    'dam-skor': 'dam',
+    'outdoor-tält': 'outdoor', 'outdoor-sovutrustning': 'outdoor',
+    'outdoor-ryggsäck': 'outdoor', 'outdoor-navigation': 'outdoor',
+    'outdoor-kök': 'outdoor', 'outdoor-säkerhet': 'outdoor',
+    'outdoor-camping-tillbehor': 'outdoor',
+    'cykling-kläder': 'herr', 'cykling-accessoarer': 'outdoor',
+    'yoga-utrustning': 'yoga-wellness', 'mindfulness': 'yoga-wellness',
+    'recovery-massage': 'recovery', 'recovery-stöd': 'recovery',
+    'recovery-terapi': 'recovery',
+    'smart-klockor': 'smart-tech', 'smart-ljud': 'smart-tech',
+    'smart-gadgets': 'smart-tech', 'smart-hälsa': 'smart-tech',
+    'nutrition-flaskor': 'nutrition', 'nutrition-kost': 'nutrition',
+    'simning': 'traning', 'klättring': 'outdoor',
+    'vinter-sport': 'outdoor', 'golf': 'traning',
+    'racketsport': 'traning',
+  };
+
   const SEED_KEYWORDS = {
 
-    // ── TRÄNING & GYM ─────────────────────────────────────
-    'gym-redskap': [
-      'resistance bands loop set fitness',
-      'pull up bar doorway gym',
+    // ══ STYRKETRÄNING & GYM ═══════════════════════════════
+    'styrka-band': [
+      'resistance bands loop set fitness workout',
+      'resistance tube bands handles workout',
+      'fabric resistance bands booty glutes',
+      'pull up assist band resistance',
+    ],
+    'styrka-redskap': [
+      'pull up bar doorway home gym',
       'ab roller wheel core workout',
-      'push up handles bars gym',
-      'kettlebell cast iron gym',
-      'adjustable dumbbell weight set',
+      'push up handles bars gym training',
+      'dip bar parallel bars home gym',
+      'gymnastics rings wood home gym',
+      'battle rope fitness training gym',
       'jump rope speed crossfit training',
-      'battle rope fitness training',
-      'weightlifting belt powerlifting',
+    ],
+    'styrka-vikter': [
+      'adjustable dumbbell set weight training',
+      'kettlebell cast iron competition',
+      'ankle weights resistance training leg',
+      'weighted vest fitness running training',
+      'wrist weights fitness training',
+      'weight plate bumper barbell',
+      'medicine ball slam fitness',
+      'sandbag training fitness',
+    ],
+    'styrka-skydd': [
+      'weightlifting belt powerlifting support',
       'gym gloves weight training grip',
       'wrist wraps weightlifting support',
-      'lifting straps deadlift gym',
-      'barbell pad squat foam',
-      'ankle weights resistance training',
-      'weighted vest fitness training',
+      'lifting straps deadlift barbell',
+      'knee sleeves weightlifting support',
+      'elbow sleeves compression weightlifting',
+      'lifting chalk grip magnesium',
     ],
-    'gym-utrustning': [
-      'spinning bike indoor cycling home gym',
-      'mini exercise bike pedal trainer desk',
-      'rowing machine home gym fitness',
-      'stepper mini fitness home',
-      'pull rope chest expander fitness',
-      'boxing gloves training sparring',
+    'styrka-utrustning': [
+      'boxing gloves training sparring bag',
       'punching bag freestanding boxing',
-      'speed bag boxing training',
-      'agility ladder speed training',
-      'balance board fitness training',
+      'speed bag boxing training wall',
+      'agility ladder speed training sport',
+      'agility cones sport training',
+      'balance board trainer fitness',
+      'bosu balance ball trainer',
+      'plyo box jump training plyometric',
+    ],
+    'gym-maskin': [
+      'spinning bike indoor cycling home gym',
+      'mini exercise bike pedal desk trainer',
+      'rowing machine home gym compact',
+      'stepper mini fitness stair climber',
+      'elliptical cross trainer home',
+      'cable machine home gym attachment',
     ],
     'gym-tillbehor': [
-      'gym bag large sports duffel',
-      'gym bag women fitness',
-      'microfiber gym towel sport',
-      'foam mat gym flooring',
-      'workout water bottle sport',
-      'blender bottle protein shaker',
-      'gym headband sweat sport',
-      'weightlifting chalk grip',
+      'gym bag large sports duffel waterproof',
+      'gym bag women fitness training',
+      'microfiber gym towel sport cooling',
+      'cooling towel sport gym workout',
+      'gym mat flooring rubber',
+      'foam mat exercise flooring interlocking',
+      'blender bottle protein shaker sport',
+      'gym chalk bag gymnastics',
+      'skipping rope counter digital',
     ],
 
-    // ── HERR SPORTKLÄDER ──────────────────────────────────
-    'herr-kompression': [
-      'men compression tights running gym',
-      'men compression shorts sport gym',
-      'men compression long sleeve shirt',
-      'men base layer thermal sport',
+    // ══ LÖPNING ═══════════════════════════════════════════
+    'löpning-skor-herr': [
+      'men road running shoes lightweight cushion',
+      'men trail running shoes waterproof grip',
+      'men carbon plate running shoes marathon',
+      'men minimalist barefoot running shoes',
+      'men racing flat running shoes speed',
     ],
-    'herr-gym-kläder': [
-      'men gym shorts workout training',
-      'men training shorts 2in1 liner',
-      'men gym tank top muscle',
-      'men gym t-shirt dry fit',
-      'men sport hoodie zip gym',
-      'men jogger pants sport training',
-      'men track pants sport slim',
+    'löpning-skor-dam': [
+      'women road running shoes lightweight',
+      'women trail running shoes waterproof',
+      'women carbon plate marathon shoes',
+      'women stability running shoes support',
     ],
-    'herr-löparkläder': [
+    'löpning-kläder-herr': [
       'men running jacket lightweight windproof',
       'men running tights winter thermal',
-      'men running shorts lightweight',
-      'men reflective running jacket',
+      'men running shorts 2in1 liner',
+      'men running singlet vest sport',
+      'men reflective running jacket visibility',
+    ],
+    'löpning-kläder-dam': [
+      'women running jacket lightweight',
+      'women running tights high waist',
+      'women running shorts built in brief',
+      'women running crop top sport',
+    ],
+    'löpning-accessoarer': [
+      'running belt waist phone holder',
+      'running hydration vest pack trail',
+      'running arm band phone holder',
+      'running cap sun visor sport',
+      'reflective running vest safety night',
+      'running headlamp trail night',
+      'running gloves winter touchscreen',
+      'running buff neck gaiter sport',
+      'running sunglasses sport uv400',
+      'running socks compression anti blister',
+      'running insole arch support',
+      'running gait analysis insole',
+    ],
+
+    // ══ SPORTKLÄDER HERR ══════════════════════════════════
+    'herr-gym-kläder': [
+      'men gym shorts workout training',
+      'men training shorts 2in1 compression',
+      'men gym tank top muscle stringer',
+      'men gym t-shirt dry fit moisture wicking',
+      'men sport hoodie zip training',
+      'men jogger pants sport slim tapered',
+      'men track pants sport zip',
+      'men compression tights running gym',
+      'men base layer thermal sport winter',
+      'men rash guard sport sun protection',
     ],
     'herr-cykelkläder': [
-      'men cycling jersey short sleeve',
+      'men cycling jersey short sleeve sport',
       'men bib cycling shorts padded',
-      'men cycling jacket windproof',
+      'men cycling jacket windproof rain',
+      'men cycling tights thermal winter',
+      'men cycling base layer thermal',
     ],
-    'herr-sport-skor': [
+    'herr-outdoor-kläder': [
+      'men hiking pants waterproof convertible',
+      'men softshell jacket outdoor',
+      'men fleece jacket outdoor hiking',
+      'men windbreaker jacket outdoor',
+      'men rain jacket waterproof outdoor',
+      'men thermal underwear set outdoor',
+      'men hiking shirt long sleeve',
+    ],
+    'herr-skor': [
       'men training shoes crossfit gym',
-      'men running shoes lightweight road',
-      'men trail running shoes grip',
       'men hiking boots waterproof ankle',
       'men trekking shoes lightweight',
+      'men cycling shoes clipless spd',
+      'men trail hiking shoes waterproof',
     ],
     'herr-accessoarer': [
       'men running socks compression',
       'men athletic socks ankle sport',
-      'men sport gloves winter running',
+      'men sport gloves winter touchscreen',
       'men sport beanie running winter',
+      'men sun hat outdoor hiking upf',
     ],
 
-    // ── DAM SPORTKLÄDER ───────────────────────────────────
-    'dam-kompression': [
+    // ══ SPORTKLÄDER DAM ═══════════════════════════════════
+    'dam-träningskläder': [
       'women compression leggings high waist gym',
-      'women sport leggings seamless yoga',
-      'women compression shorts sport',
-      'women compression long sleeve sport',
-      'women thermal base layer sport',
-    ],
-    'dam-gym-kläder': [
-      'women gym shorts workout biker',
+      'women seamless leggings sport yoga',
+      'women biker shorts sport gym',
+      'women gym shorts workout',
       'women workout top tank gym',
-      'women sport hoodie zip gym',
+      'women sport hoodie zip training',
       'women training jacket sport',
       'women jogger pants sport',
-      'women track pants sport',
       'women gym t-shirt dry fit',
+      'women compression long sleeve sport',
     ],
     'dam-sport-bh': [
       'women sports bra high impact running',
       'women sports bra medium support training',
       'women sports bra low impact yoga',
       'women racerback sports bra gym',
-    ],
-    'dam-löparkläder': [
-      'women running jacket lightweight',
-      'women running tights thermal winter',
-      'women running shorts lightweight',
-      'women trail running jacket',
+      'women zip front sports bra',
     ],
     'dam-yoga-kläder': [
       'women yoga leggings seamless',
       'women yoga shorts sport',
-      'women yoga top sport bra',
-      'women pilates leggings grip socks',
+      'women yoga crop top training',
+      'women pilates leggings grip',
     ],
-    'dam-sport-skor': [
+    'dam-outdoor-kläder': [
+      'women hiking pants waterproof',
+      'women softshell jacket outdoor',
+      'women fleece jacket hiking',
+      'women rain jacket waterproof running',
+      'women hiking shirt sun protection',
+    ],
+    'dam-skor': [
       'women training shoes gym crossfit',
-      'women running shoes lightweight',
-      'women trail running shoes',
       'women hiking boots waterproof',
       'women trekking shoes lightweight',
-    ],
-    'dam-accessoarer': [
-      'women running socks compression',
-      'women sport headband sweat',
-      'women sport gloves winter',
+      'women trail running shoes grip',
     ],
 
-    // ── LÖPNING ───────────────────────────────────────────
-    'löpning-accessoarer': [
-      'running belt waist phone holder',
-      'running hydration vest pack',
-      'running arm band phone',
-      'running cap sun visor sport',
-      'reflective running vest safety',
-      'running headlamp trail',
-      'running gloves winter touch screen',
-      'running buff neck gaiter',
-      'running sunglasses sport',
-      'foam insole running shoe',
-    ],
-
-    // ── OUTDOOR ───────────────────────────────────────────
+    // ══ OUTDOOR & FRILUFTSLIV ═════════════════════════════
     'outdoor-tält': [
-      'camping tent 2 person ultralight',
-      'backpacking tent 1 person ultralight',
-      'camping tent 3 person family',
-      'instant pop up tent camping',
+      'camping tent 2 person ultralight backpacking',
+      'instant pop up tent camping 3 person',
+      'hammock tent camping ultralight',
+      'bivvy bag emergency shelter',
       'tarp shelter camping ultralight',
     ],
-    'outdoor-sömn': [
+    'outdoor-sovutrustning': [
       'sleeping bag mummy ultralight 3 season',
       'sleeping bag down ultralight camping',
       'sleeping pad inflatable ultralight',
+      'sleeping pad foam camping lightweight',
       'camping pillow ultralight compressible',
     ],
     'outdoor-ryggsäck': [
-      'hiking backpack 30l waterproof',
-      'trekking backpack 50l frame',
-      'ultralight daypack hiking',
-      'trail running vest pack',
+      'hiking backpack 30l waterproof frame',
+      'trekking backpack 50l internal frame',
+      'ultralight daypack hiking 20l',
+      'hydration backpack running trail 10l',
+      'summit pack climbing 25l',
     ],
     'outdoor-navigation': [
       'trekking poles carbon fiber ultralight',
-      'hiking poles adjustable aluminum',
-      'headlamp rechargeable usb waterproof',
-      'head torch led camping hiking',
-      'compass orienteering hiking',
+      'hiking poles aluminum adjustable',
+      'headlamp rechargeable usb 1000 lumen',
+      'head torch led camping waterproof',
+      'compass orienteering baseplate',
+      'gps outdoor device handheld',
     ],
     'outdoor-kök': [
-      'camping stove portable gas ultralight',
+      'camping stove gas portable ultralight',
       'backpacking stove titanium ultralight',
-      'camping cookware set titanium',
-      'camping pot ultralight titanium',
+      'camping cookware set titanium lightweight',
+      'camping pot ultralight titanium 1l',
       'water filter straw hiking camping',
-      'water purifier tablet camping',
+      'water purifier squeeze filter',
+      'camping percolator coffee outdoor',
+      'jetboil stove system camping',
     ],
     'outdoor-säkerhet': [
-      'carabiner climbing aluminum',
-      'survival kit emergency outdoor',
+      'carabiner climbing aluminum oval',
+      'survival kit emergency outdoor 14 piece',
       'emergency blanket mylar camping',
       'fire starter flint steel camping',
-      'first aid kit outdoor hiking',
+      'first aid kit outdoor hiking compact',
+      'emergency whistle safety outdoor',
+      'paracord bracelet survival',
       'bear spray outdoor camping',
+      'multi tool outdoor survival',
+      'duct tape outdoor repair',
     ],
-    'outdoor-cykling': [
-      'bike helmet cycling road mountain',
-      'cycling computer gps waterproof',
-      'cycling gloves gel padded',
-      'bike light front rear usb',
-      'saddle bag waterproof cycling',
-      'bike repair kit tool',
-      'cycling water bottle cage',
+    'outdoor-camping-tillbehor': [
+      'camping lantern led rechargeable',
+      'solar lantern camping outdoor',
+      'camping chair ultralight folding',
+      'camping table folding lightweight',
+      'dry bag waterproof 20l outdoor',
+      'stuff sack compression outdoor',
+      'trekking gaiters waterproof hiking',
+      'camp shoes sandals outdoor',
     ],
 
-    // ── YOGA & WELLNESS ───────────────────────────────────
+    // ══ CYKLING ═══════════════════════════════════════════
+    'cykling-kläder': [
+      'cycling jersey men short sleeve',
+      'cycling bib shorts padded gel',
+      'cycling jacket windproof rain',
+      'cycling tights thermal winter',
+      'cycling gloves gel padded',
+      'cycling cap helmet liner',
+      'cycling socks compression',
+    ],
+    'cykling-accessoarer': [
+      'bike helmet road cycling lightweight',
+      'mountain bike helmet',
+      'cycling computer gps waterproof',
+      'bike light front rear usb rechargeable',
+      'saddle bag waterproof cycling',
+      'bike repair kit tool set',
+      'cycling water bottle cage',
+      'bike pump portable mini',
+      'cycling phone mount handlebar',
+      'bike radar rear warning',
+      'power meter pedal cycling',
+    ],
+
+    // ══ YOGA & WELLNESS ═══════════════════════════════════
     'yoga-utrustning': [
       'yoga mat non slip thick 6mm',
-      'yoga mat extra thick 10mm',
-      'yoga block cork set 2',
-      'yoga strap stretch cotton',
+      'yoga mat extra thick 10mm tpe',
+      'yoga block cork natural set 2',
+      'yoga strap cotton stretch',
       'yoga wheel back stretch',
-      'yoga bolster meditation',
-      'meditation cushion zafu',
-      'pilates ring magic circle',
-      'balance ball yoga stability',
+      'yoga bolster meditation rectangular',
+      'meditation cushion zafu round',
+      'pilates ring magic circle resistance',
+      'balance ball stability yoga 65cm',
+      'pilates bar kit resistance',
+    ],
+    'mindfulness': [
+      'meditation timer app mindfulness',
+      'singing bowl meditation yoga',
+      'incense holder yoga meditation',
+      'eye pillow lavender meditation',
+      'bolster pillow yoga meditation',
     ],
 
-    // ── ÅTERHÄMTNING ──────────────────────────────────────
+    // ══ ÅTERHÄMTNING ══════════════════════════════════════
     'recovery-massage': [
       'massage gun deep tissue percussion',
-      'foam roller muscle recovery high density',
-      'massage ball trigger point lacrosse',
-      'vibration foam roller electric',
-      'foot massager electric shiatsu',
+      'mini massage gun portable compact',
+      'foam roller high density muscle',
+      'vibrating foam roller electric',
+      'massage ball trigger point set',
+      'foot massager electric shiatsu rolling',
+      'back massager electric pillow',
+      'percussion massager attachment head',
     ],
     'recovery-stöd': [
       'knee brace support patella sport',
-      'knee sleeve compression sport',
-      'ankle brace support sport',
-      'elbow brace tennis golfer',
-      'wrist brace support sport',
-      'back brace lumbar support sport',
+      'knee sleeve compression neoprene',
+      'ankle brace support lace up',
+      'elbow brace tennis golfer support',
+      'wrist brace support carpal',
+      'back brace lumbar support belt',
       'shin splint compression sleeve',
-      'plantar fasciitis insole support',
+      'plantar fasciitis arch support insole',
+      'shoulder brace support sport',
     ],
     'recovery-terapi': [
-      'ice bath cold therapy sport',
+      'ice bath cold plunge portable tub',
       'cold compress reusable sport',
-      'heat pad therapy sport',
-      'kinesio tape sport athletic',
-      'posture corrector back brace',
-      'neck traction stretcher sport',
+      'heat pad therapy electric',
+      'kinesio tape sport elastic athletic',
+      'posture corrector brace back',
+      'neck traction stretcher cervical',
       'acupressure mat pillow set',
-      'breathing trainer lung sport',
+      'breathing trainer lung exercise',
+      'stretch board calf adjustable',
+      'foam wedge stretch board',
+      'red light therapy device sport',
+      'compression boots recovery legs',
     ],
 
-    // ── SMART TECH ────────────────────────────────────────
+    // ══ SMART TECH ════════════════════════════════════════
     'smart-klockor': [
-      'gps smartwatch sport running',
-      'fitness tracker smartwatch heart rate',
-      'triathlon watch gps multisport',
-      'running watch gps waterproof',
-      'smartwatch sport health monitor',
+      'gps smartwatch sport running waterproof',
+      'fitness tracker smartwatch heart rate sleep',
+      'triathlon watch gps multisport swim',
+      'running watch gps pace altitude',
+      'outdoor gps watch military rugged',
+      'smart ring health fitness tracker',
       'fitness band activity tracker steps',
-      'smart ring fitness health tracker',
     ],
     'smart-ljud': [
       'bone conduction headphones sport waterproof',
-      'wireless sports earbuds waterproof',
+      'wireless sports earbuds waterproof ipx7',
       'open ear headphones running sport',
-      'sport earbuds bluetooth waterproof',
+      'sport earbuds bluetooth secure fit',
+      'tws earbuds sport gym sweatproof',
     ],
     'smart-gadgets': [
       'action camera 4k waterproof sport',
-      'helmet camera cycling waterproof',
-      'heart rate monitor chest strap',
-      'cadence sensor cycling ant+',
-      'cycling radar rear light',
-      'gps outdoor navigation device',
+      'action cam stabilizer gimbal sport',
+      'helmet camera cycling 4k waterproof',
+      'heart rate monitor chest strap ant+',
+      'cadence sensor cycling bluetooth',
+      'cycling radar rear light warning',
+      'gps outdoor navigation handheld device',
       'solar charger panel outdoor camping',
+      'portable power bank outdoor waterproof',
+      'smart glasses audio sport uv',
+    ],
+    'smart-hälsa': [
+      'pulse oximeter sport training',
+      'blood pressure monitor sport wrist',
+      'body composition scale smart',
+      'sleep tracker ring health',
+      'stress monitor hrv sport',
     ],
 
-    // ── NUTRITION ─────────────────────────────────────────
+    // ══ NUTRITION & HYDRERING ═════════════════════════════
     'nutrition-flaskor': [
-      'insulated water bottle stainless steel sport',
-      'hydration bottle sport 1 liter',
-      'protein shaker bottle 700ml',
-      'blender ball shaker bottle sport',
-      'hydration pack bladder running',
+      'insulated water bottle stainless steel 1l',
+      'hydration bottle sport wide mouth',
+      'protein shaker bottle 700ml ball',
+      'hydration pack bladder 2l running',
+      'collapsible water bottle sport',
+      'filtered water bottle sport',
     ],
     'nutrition-kost': [
-      'electrolyte powder sport hydration',
+      'electrolyte powder sport hydration tablets',
       'energy gel running endurance',
       'protein bar sport recovery',
-      'bcaa amino acid sport powder',
-      'creatine monohydrate sport',
+      'bcaa amino acid powder sport',
+      'creatine monohydrate sport fitness',
+      'pre workout powder sport',
+      'collagen sport recovery',
+    ],
+
+    // ══ SIMNING & VATTENSPORT ═════════════════════════════
+    'simning': [
+      'swim goggles anti fog uv sport',
+      'swim cap silicone sport',
+      'swimming fins short training',
+      'hand paddles swimming training',
+      'swim buoy open water safety',
+      'wetsuit triathlon 3mm',
+      'rash guard swim sun protection',
+    ],
+
+    // ══ KLÄTTRING & EXTREME ════════════════════════════════
+    'klättring': [
+      'climbing harness sport beginner',
+      'climbing shoes bouldering sport',
+      'climbing rope dynamic 9.5mm',
+      'belay device climbing atc',
+      'chalk bag climbing bouldering',
+      'fingerboard training hangboard',
+      'crash pad bouldering',
+    ],
+
+    // ══ VINTER & SNÖ ══════════════════════════════════════
+    'vinter-sport': [
+      'ski helmet with visor adult',
+      'ski goggles otg magnetic lens',
+      'ski gloves waterproof warm',
+      'snowboard bindings universal',
+      'ski socks merino wool',
+      'thermal ski base layer set',
+      'hand warmers reusable sport',
+      'neck warmer gaiter winter sport',
+    ],
+
+    // ══ GOLF ══════════════════════════════════════════════
+    'golf': [
+      'golf glove men cadet left hand',
+      'putting mat indoor home practice',
+      'golf swing trainer aid',
+      'golf ball retriever extendable',
+      'golf tees bamboo biodegradable',
+    ],
+
+    // ══ TENNIS & RACKETSPORT ══════════════════════════════
+    'racketsport': [
+      'tennis racket beginner sport',
+      'padel racket sport',
+      'badminton racket set sport',
+      'squash racket sport',
+      'pickleball paddle sport',
+      'table tennis paddle sport',
     ],
   };
 
@@ -2001,8 +2207,8 @@ app.post('/api/seed', async (req, res) => {
     for (const [cat, keywords] of selected) {
       console.log(`[SEED] Category: ${cat}`);
       for (const kw of keywords) {
-        console.log(`[SEED] → ${kw}`);
-        await runProductResearch([kw]);
+        console.log(`[SEED] → ${kw} (${cat})`);
+        await runProductResearch([kw], cat);
         await delay(delay_ms);
       }
     }
@@ -2012,6 +2218,64 @@ app.post('/api/seed', async (req, res) => {
 
 
 
+
+
+// ── OMPRISÄTT ALLA PRODUKTER ──────────────────────────────
+// Sänker marginalen från ~75% till ~50% på alla live-produkter
+app.post('/api/products/reprice', async (req, res) => {
+  const domain = process.env.SHOPIFY_DOMAIN;
+  const token  = process.env.SHOP_TOKEN || process.env.SHOPIFY_TOKEN;
+  const { margin = 50 } = req.body || {};
+  if (!domain || !token) return res.status(500).json({ error: 'Shopify ej konfigurerat' });
+
+  const products = store.products.filter(p => p.shopifyId && p.costPrice);
+  res.json({ ok: true, message: `Omprisätter ${products.length} produkter till ${margin}% marginal...`, total: products.length });
+
+  (async () => {
+    const delay = ms => new Promise(r => setTimeout(r, ms));
+    const SNAP = [29,39,49,59,79,99,119,149,179,199,229,249,299,349,399,449,499,549,599,699,799,899,999,1099,1199,1299,1499,1999,2499,2999];
+    let updated = 0;
+
+    for (const item of products) {
+      try {
+        // New price: cost / (1 - margin/100)
+        const costSek = item.costPrice * 9.5;
+        const targetPrice = costSek / (1 - margin / 100);
+        // Snap to nearest price point
+        let newPrice = SNAP[0];
+        let minDiff = Math.abs(targetPrice - SNAP[0]);
+        for (const p of SNAP) {
+          const diff = Math.abs(targetPrice - p);
+          if (diff < minDiff) { minDiff = diff; newPrice = p; }
+        }
+
+        // Get variant IDs from Shopify
+        const varRes = await axios.get(
+          `https://${domain}/admin/api/2024-01/products/${item.shopifyId}/variants.json`,
+          { headers: { 'X-Shopify-Access-Token': token } }
+        );
+        const variants = varRes.data.variants || [];
+
+        // Update each variant price
+        for (const v of variants) {
+          await axios.put(
+            `https://${domain}/admin/api/2024-01/variants/${v.id}.json`,
+            { variant: { id: v.id, price: String(newPrice) } },
+            { headers: { 'X-Shopify-Access-Token': token, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        item.sellPrice = newPrice;
+        item.margin = Math.round(((newPrice - costSek) / newPrice) * 100);
+        await dbSave('products', item);
+        updated++;
+        console.log(`✓ Repriced: ${item.title} → ${newPrice} kr (${item.margin}%)`);
+        await delay(500);
+      } catch(e) { console.error(`✗ Reprice failed: ${item.title}`, e.message); }
+    }
+    console.log(`[REPRICE] Done: ${updated}/${products.length}`);
+  })();
+});
 
 // ── RENSA KÖN ─────────────────────────────────────────────
 app.post('/api/queue/clean', async (req, res) => {
