@@ -531,6 +531,31 @@ const HARD_BLOCKED = [
   'led strip','smart bulb','smart plug',
   'suitcase','luggage','travel bag fashion',
   'picnic blanket','pool float','inflatable pool',
+
+  // Kameror utan sport
+  'övervakningskamera','surveillance camera','security camera','cctv',
+  'dashcam','dash cam','baby monitor camera','doorbell camera',
+  'ip camera','nanny cam','hidden camera','spy camera',
+
+  // Skor utan sport
+  'juteskor','espadrilles','wedge sandal','wedge heel','wedge shoe',
+  'platform sandal','platform heel','platform shoe',
+  'high heel','stiletto','kitten heel','block heel',
+  'mule shoe','slip on fashion','loafer fashion',
+  'chelsea boot fashion','ankle boot fashion',
+  'flätade skor','fashion sandal','strappy sandal',
+
+  // Vanliga kläder
+  'stand collar shirt','elegant shirt','slim fit fashion',
+  'casual t-shirt','everyday t-shirt','cotton tee fashion',
+  'knit sweater','stickad tröja fashion','cardigan fashion',
+  'denim','jeans','chinos','khaki pants',
+  'blouse','skjorta mode','flannel shirt','linen shirt fashion',
+
+  // Hem-elektronik
+  'smart home','smart speaker','robot vacuum','vacuum cleaner',
+  'air purifier','humidifier','dehumidifier',
+  'electric blanket','heating pad home','fan home',
 ];
 
 function isProductBlocked(product) {
