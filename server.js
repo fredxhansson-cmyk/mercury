@@ -923,13 +923,14 @@ async function publishToShopify(product) {
   let handles;
   if (product.forcedCollection) {
     handles = [product.forcedCollection];
-    // Also add gender collection
     const gender = mapToCollections(product.title, product.category, product.description)
       .filter(h => h === 'herr' || h === 'dam');
     handles = [...new Set([...handles, ...gender])];
   } else {
     handles = mapToCollections(product.title, product.category, product.description);
   }
+  // Always add to Nyheter
+  handles = [...new Set([...handles, 'nyheter'])];
   for (const handle of handles) {
     try { await addProductToCollection(shopifyProduct.id, handle); } catch(e) {}
   }
@@ -1715,7 +1716,20 @@ app.post('/api/seed', async (req, res) => {
   // ── KOMPLETTA SPORT/OUTDOOR/HÄLSA KEYWORDS ──────────────
   // Varje keyword är specifikt nog att CJ knappt kan returnera fel produkt.
   // Baserat på trendanalys 2026 + Melonis kategorier.
-  // Each category maps directly to a Shopify collection handle
+  // Direct Shopify Collection IDs — no lookup needed
+  const SHOPIFY_COLLECTION_IDS = {
+    'traning':      681949495633,
+    'outdoor':      681949299025,
+    'yoga-wellness':681949528401,
+    'lopning':      681679290705,
+    'smart-tech':   681668084049,
+    'nutrition':    681949397329,
+    'recovery':     682045604177,
+    'dam':          681677816145,
+    'herr':         681677783377,
+    'nyheter':      682067132753,
+  };
+
   const COLLECTION_MAP = {
     'styrka-band': 'traning', 'styrka-redskap': 'traning',
     'styrka-vikter': 'traning', 'styrka-skydd': 'traning',
@@ -2277,6 +2291,40 @@ app.post('/api/products/reprice', async (req, res) => {
   })();
 });
 
+
+// ── UPPDATERA PRODUKT I KÖN ───────────────────────────────
+app.patch('/api/queue/:id', async (req, res) => {
+  const item = store.queue.find(p => p.id === req.params.id);
+  if (!item) return res.status(404).json({ error: 'Produkt hittades inte i kön' });
+
+  const { collection, sellPrice, title } = req.body;
+  if (collection) {
+    item.forcedCollection = collection;
+    item.category = collection;
+  }
+  if (sellPrice) item.sellPrice = parseInt(sellPrice);
+  if (title) item.title = title;
+
+  await dbSave('queue', item);
+  res.json({ ok: true, item });
+});
+
+// ── PRISMARGINALER ─────────────────────────────────────────
+// Beräkna pris baserat på kostnad och önskad marginal
+app.get('/api/price-calc', (req, res) => {
+  const { cost_usd, margin } = req.query;
+  const costSek = parseFloat(cost_usd) * 9.5;
+  const SNAP = [29,39,49,59,79,99,119,149,179,199,229,249,299,349,399,449,499,549,599,699,799,899,999,1099,1199,1299,1499,1999,2499,2999];
+  const margins = [20, 35, 50, 65, 80];
+  const prices = margins.map(m => {
+    const target = costSek / (1 - m/100);
+    let best = SNAP[0], minDiff = Math.abs(target - SNAP[0]);
+    for (const p of SNAP) { const d = Math.abs(target-p); if(d<minDiff){minDiff=d;best=p;} }
+    return { margin: m, price: best, actual_margin: Math.round(((best-costSek)/best)*100) };
+  });
+  res.json({ cost_sek: Math.round(costSek), prices });
+});
+
 // ── RENSA KÖN ─────────────────────────────────────────────
 app.post('/api/queue/clean', async (req, res) => {
   const before = store.queue.length;
@@ -2385,13 +2433,8 @@ app.post('/api/products/fix-all', async (req, res) => {
   (async () => {
     const delay = ms => new Promise(r => setTimeout(r, ms));
     // Get all collections to find IDs
-    const colRes = await axios.get(
-      `https://${domain}/admin/api/2024-01/custom_collections.json?limit=250`,
-      { headers: { 'X-Shopify-Access-Token': token } }
-    );
-    const allCols = colRes.data.custom_collections || [];
-    const colMap = {};
-    allCols.forEach(c => { colMap[c.handle] = c.id; });
+    // Use hardcoded collection IDs for reliability
+    const colMap = SHOPIFY_COLLECTION_IDS;
 
     // Remove all existing collection memberships for each product
     for (const item of products) {
