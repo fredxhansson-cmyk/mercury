@@ -2091,6 +2091,39 @@ app.get('/api/price-calc', (req, res) => {
   res.json({ cost_sek: Math.round(costSek), prices });
 });
 
+
+// ── FÖRHANDSGRANSKNING AV CLEAN ───────────────────────────
+// Visar vad som SKULLE tas bort utan att faktiskt ta bort något
+app.get('/api/products/clean-preview', async (req, res) => {
+  const toRemove = [];
+  const toKeep = [];
+
+  for (const item of store.products) {
+    const blocked = isProductBlocked({
+      title: item.title,
+      nameEn: item.rawTitle,
+      rawTitle: item.rawTitle,
+      categoryName: item.category,
+      description: item.description,
+      keyword: ''
+    });
+
+    if (blocked) {
+      toRemove.push({ title: item.title, category: item.category, score: item.score, shopifyId: item.shopifyId });
+    } else {
+      toKeep.push({ title: item.title, category: item.category, score: item.score });
+    }
+  }
+
+  res.json({
+    total: store.products.length,
+    wouldRemove: toRemove.length,
+    wouldKeep: toKeep.length,
+    removeList: toRemove,
+    keepList: toKeep
+  });
+});
+
 // ── RENSA KÖN ─────────────────────────────────────────────
 app.post('/api/queue/clean', async (req, res) => {
   const before = store.queue.length;
